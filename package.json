@@ -1,0 +1,35 @@
+{
+  "name": "mentalpro-landing",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@emailjs/browser": "^4.1.0",
+    "@emotion/is-prop-valid": "latest",
+    "@radix-ui/react-accordion": "1.2.12",
+    "@radix-ui/react-label": "2.1.8",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "embla-carousel-react": "8.6.0",
+    "framer-motion": "12.23.26",
+    "lucide-react": "0.562.0",
+    "next": "14.2.35",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "3.4.0",
+    "tailwindcss-animate": "1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "8.5.6",
+    "tailwindcss": "4.1.18",
+    "typescript": "^5"
+  }
+}
