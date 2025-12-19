@@ -129,8 +129,8 @@ export default function Page() {
 
         <section className="bg-black py-14" id="servicios">
           <div className="container space-y-12">
-            <div className="text-left space-y-4 ml-0">
-              <h2 className="text-3xl font-[500] tracking-tighter sm:text-4xl md:text-5xl text-white">
+            <div className="bg-black text-left space-y-4 ml-0">
+              <h2 className="bg-black text-3xl font-[500] tracking-tighter sm:text-4xl md:text-5xl text-white">
                 Nos diferenciamos del resto
               </h2>
               <p className="ml-0 max-w-[600px] text-gray-400 font-light">
@@ -138,7 +138,7 @@ export default function Page() {
                 ventas.
               </p>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-black grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
                   title: "Un nuevo cliente agendado",
@@ -159,10 +159,11 @@ export default function Page() {
               ].map((service, i) => {
                 const Icon = service.icon
                 return (
-                  <Card
-                    key={i}
-                    className="p-8 space-y-4 bg-black border border-gray-800 hover:border-gray-700 transition-colors group"
-                  >
+                <Card
+  key={i}
+  className="p-8 space-y-4 bg-black text-white border border-gray-800 hover:border-gray-700 transition-colors group shadow-none"
+>
+
                     <div className="flex items-center gap-4">
                       <div className="p-2 rounded-lg bg-gray-900 group-hover:bg-white group-hover:text-black transition-colors">
                         <Icon className="h-5 w-5" />
@@ -180,15 +181,7 @@ export default function Page() {
             </p>
           </div>
         </section>
-      <div className="flex justify-center pb-5 items-center gap-1 text-white">
-          <InteractiveButton
-            size="lg"
-            className="font-light bg-white text-black hover:bg-white/90"
-            scrollTo="#contacto"
-          >
-            Quiero aumentar mis ventas
-          </InteractiveButton>
-        </div>
+
         <section className="py-24 bg-black border-y border-gray-800" id="casos">
           <div className="container space-y-16">
             <div className="max-w-3xl mx-auto text-center space-y-4">
