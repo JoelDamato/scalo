@@ -22,7 +22,7 @@ import WhatsApp from "./pages/WhatsApp";
 import Resources from "./pages/Resources";
 import SharedInitiative from "./pages/SharedInitiative";
 import NotFound from "./pages/NotFound";
-// import { ElevenLabsAssistant } from "./components/voice/ElevenLabsAssistant";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -51,7 +51,7 @@ const App = () => (
               <Route path="/shared/:token" element={<SharedInitiative />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            {/* <ElevenLabsAssistant /> */}
+            
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
