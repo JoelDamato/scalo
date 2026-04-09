@@ -1,0 +1,1 @@
+UPDATE customers SET email = 'od.rodriguezraquel@gmail.com', user_id = 'ec8a3ea4-dfec-4580-be06-1404256ccb73' WHERE id = '133d8663-f5ac-44ab-ab44-cd978432a73f';

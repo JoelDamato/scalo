@@ -1,0 +1,248 @@
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/600.css";
+@import "@fontsource/dm-sans/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode — warm neutral grayscale */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+
+    --primary: 0 0% 12%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 12%;
+
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 42%;
+
+    --accent: 0 0% 93%;
+    --accent-foreground: 0 0% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 89%;
+    --input: 0 0% 87%;
+    --ring: 0 0% 12%;
+
+    --radius: 0.5rem;
+
+    /* Status colors */
+    --status-backlog: 220 8% 52%;
+    --status-in-progress: 210 100% 52%;
+    --status-review: 38 92% 50%;
+    --status-done: 142 72% 40%;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 97%;
+    --sidebar-foreground: 0 0% 42%;
+    --sidebar-primary: 0 0% 9%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 93%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 91%;
+    --sidebar-ring: 0 0% 12%;
+
+    /* Surface tokens */
+    --surface-elevated: 0 0% 100%;
+    --surface-subtle: 0 0% 97%;
+
+    /* Accent palette */
+    --accent-blue: 210 100% 52%;
+    --accent-green: 142 72% 40%;
+    --accent-amber: 38 92% 50%;
+    --accent-rose: 350 85% 58%;
+    --accent-violet: 262 83% 58%;
+  }
+
+  .dark {
+    /* Ultra-dark premium grayscale */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 93%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 93%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 93%;
+
+    /* Clean white primary for max contrast */
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 4%;
+
+    /* Subtle elevated surfaces */
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 88%;
+
+    --muted: 0 0% 9%;
+    --muted-foreground: 0 0% 48%;
+
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 88%;
+
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Very subtle borders */
+    --border: 0 0% 13%;
+    --input: 0 0% 11%;
+    --ring: 0 0% 95%;
+
+    /* Status colors — vivid on dark */
+    --status-backlog: 220 8% 48%;
+    --status-in-progress: 210 100% 60%;
+    --status-review: 38 92% 55%;
+    --status-done: 142 72% 46%;
+
+    /* Sidebar — slightly darker than bg */
+    --sidebar-background: 0 0% 3%;
+    --sidebar-foreground: 0 0% 52%;
+    --sidebar-primary: 0 0% 93%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 9%;
+    --sidebar-accent-foreground: 0 0% 88%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 0 0% 95%;
+
+    /* Surface tokens */
+    --surface-elevated: 0 0% 8%;
+    --surface-subtle: 0 0% 5%;
+
+    /* Accent palette — punchy on pure dark */
+    --accent-blue: 210 100% 60%;
+    --accent-green: 142 72% 46%;
+    --accent-amber: 38 92% 55%;
+    --accent-rose: 350 80% 62%;
+    --accent-violet: 262 80% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: "DM Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* PWA safe area */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Smooth transitions for interactive elements */
+@layer components {
+  .transition-default {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  .transition-smooth {
+    @apply transition-all duration-200;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Premium card styles */
+  .card-elevated {
+    @apply bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow;
+  }
+
+  .card-interactive {
+    @apply bg-card rounded-xl border border-border shadow-sm hover:shadow-md hover:border-border/80 transition-all cursor-pointer;
+  }
+
+  /* Button glow effect */
+  .btn-glow {
+    @apply relative overflow-hidden;
+  }
+  
+  .btn-glow::after {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: radial-gradient(circle at center, hsl(var(--foreground) / 0.08) 0%, transparent 70%);
+  }
+  
+  .btn-glow:hover::after {
+    @apply opacity-100;
+  }
+
+  /* Kanban specific styles */
+  .kanban-column {
+    @apply flex flex-col min-h-[200px] rounded-xl bg-muted/30 p-3 border border-border/50;
+  }
+
+  .kanban-card {
+    @apply bg-card rounded-lg border border-border p-3 shadow-sm transition-all hover:shadow-md hover:border-foreground/10;
+  }
+
+  .kanban-card-dragging {
+    @apply shadow-xl ring-2 ring-foreground/10 rotate-1 scale-[1.02];
+  }
+
+  /* Premium badge styles */
+  .badge-status {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
+  }
+
+  /* Subtle text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent;
+  }
+
+  /* Premium divider */
+  .divider-subtle {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  /* Subtle glow for cards */
+  .card-glow {
+    @apply relative;
+    box-shadow: 0 0 40px -15px hsl(var(--foreground) / 0.06);
+  }
+
+  .card-glow:hover {
+    box-shadow: 0 0 50px -10px hsl(var(--foreground) / 0.1);
+  }
+}
