@@ -22,8 +22,8 @@ export default defineConfig(({ mode }) => ({
         importScripts: ["/sw-push.js"],
       },
       manifest: {
-        name: "Waves Portal",
-        short_name: "Waves",
+        name: "Scalo Portal",
+        short_name: "Scalo",
         description: "Gestión de proyectos, clientes y finanzas",
         theme_color: "#0a0a0a",
         background_color: "#0a0a0a",

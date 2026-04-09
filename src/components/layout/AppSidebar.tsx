@@ -12,7 +12,7 @@ import {
   Ticket,
   BookOpen
 } from 'lucide-react';
-import wavesLogo from '@/assets/waves-logo.png';
+import scaloLogo from '@/assets/scalo-logo.png';
 
 import { NavLink } from '@/components/NavLink';
 import { ThemeToggleSwitch } from '@/components/ui/theme-toggle';
@@ -72,23 +72,10 @@ export function AppSidebar() {
       {/* Header with logo */}
       <SidebarHeader className="py-5 pb-3 px-4 group-data-[collapsible=icon]:px-2">
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-          <div 
-            className="h-8 w-8 shrink-0"
-            style={{
-              backgroundColor: 'hsl(var(--sidebar-primary))',
-              WebkitMaskImage: `url(${wavesLogo})`,
-              WebkitMaskSize: 'contain',
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${wavesLogo})`,
-              maskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              maskPosition: 'center',
-            }}
-          />
+          <img src={scaloLogo} alt="Scalo" className="h-8 w-8 shrink-0 rounded" />
           {!isCollapsed && (
             <span className="font-semibold text-sidebar-primary text-[15px] tracking-tight">
-              Waves Portal
+              Scalo Portal
             </span>
           )}
         </div>

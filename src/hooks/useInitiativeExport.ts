@@ -300,7 +300,7 @@ function generateAutomationExport(data: InitiativeExportData): string {
     markdown += '\n';
   }
 
-  markdown += `---\n\n*Documento generado automáticamente desde Waves Portal*\n*Fecha: ${new Date().toLocaleDateString('es-AR', { 
+  markdown += `---\n\n*Documento generado automáticamente desde Scalo Portal*\n*Fecha: ${new Date().toLocaleDateString('es-AR', { 
     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
   })}*\n`;
 
@@ -429,7 +429,7 @@ export function generateMarkdownExport(data: InitiativeExportData): string {
     markdown += formatSection('Implementation Plan', data.techDocs.implementation_plan);
   }
 
-  markdown += `---\n\n*Documento generado automáticamente desde Waves Portal*\n*Fecha: ${new Date().toLocaleDateString('es-AR', { 
+  markdown += `---\n\n*Documento generado automáticamente desde Scalo Portal*\n*Fecha: ${new Date().toLocaleDateString('es-AR', { 
     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
   })}*\n`;
 
