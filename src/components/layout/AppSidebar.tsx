@@ -10,7 +10,6 @@ import {
   Wallet,
   Users,
   Ticket,
-  MessageCircle,
   BookOpen
 } from 'lucide-react';
 import wavesLogo from '@/assets/waves-logo.png';
@@ -41,7 +40,6 @@ const mainNavItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Proyectos', url: '/projects', icon: FolderKanban },
   { title: 'Clientes', url: '/crm', icon: Users },
-  { title: 'WhatsApp', url: '/whatsapp', icon: MessageCircle },
   { title: 'Tareas', url: '/tasks', icon: CheckSquare },
   { title: 'Soporte', url: '/support', icon: Ticket },
   { title: 'Finanzas', url: '/finance', icon: Wallet },
