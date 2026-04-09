@@ -27,20 +27,7 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div
-            className="h-10 w-10 animate-pulse"
-            style={{
-              backgroundColor: 'hsl(var(--foreground))',
-              WebkitMaskImage: `url(${wavesLogo})`,
-              WebkitMaskSize: 'contain',
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${wavesLogo})`,
-              maskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              maskPosition: 'center',
-            }}
-          />
+          <img src={scaloLogo} alt="Scalo" className="h-10 w-10 animate-pulse rounded" />
           <p className="text-sm text-muted-foreground">Cargando...</p>
         </div>
       </div>
@@ -102,22 +89,9 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-card border-r border-border">
         <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.02] via-transparent to-foreground/[0.04]" />
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 animate-fade-in">
-          <div
-            className="h-16 w-16 mb-6"
-            style={{
-              backgroundColor: 'hsl(var(--foreground))',
-              WebkitMaskImage: `url(${wavesLogo})`,
-              WebkitMaskSize: 'contain',
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${wavesLogo})`,
-              maskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              maskPosition: 'center',
-            }}
-          />
+          <img src={scaloLogo} alt="Scalo" className="h-16 w-16 mb-6 rounded" />
           <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">
-            Waves Portal
+            Scalo Portal
           </h2>
           <p className="text-muted-foreground text-center max-w-sm text-balance leading-relaxed">
             Tu espacio centralizado para gestionar proyectos, tareas y clientes con claridad total.
@@ -145,21 +119,8 @@ export default function Auth() {
         <div className="w-full max-w-sm animate-fade-in" style={{ animationDelay: '100ms' }}>
           {/* Mobile logo */}
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
-            <div
-              className="h-8 w-8"
-              style={{
-                backgroundColor: 'hsl(var(--foreground))',
-                WebkitMaskImage: `url(${wavesLogo})`,
-                WebkitMaskSize: 'contain',
-                WebkitMaskRepeat: 'no-repeat',
-                WebkitMaskPosition: 'center',
-                maskImage: `url(${wavesLogo})`,
-                maskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                maskPosition: 'center',
-              }}
-            />
-            <span className="text-lg font-semibold tracking-tight">Waves Portal</span>
+            <img src={scaloLogo} alt="Scalo" className="h-8 w-8 rounded" />
+            <span className="text-lg font-semibold tracking-tight">Scalo Portal</span>
           </div>
 
           <div className="mb-6">
