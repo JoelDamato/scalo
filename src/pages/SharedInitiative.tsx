@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, Circle, FileText, Loader2 } from 'lucide-react';
-import wavesLogo from '@/assets/waves-logo.png';
+import scaloLogo from '@/assets/scalo-logo.png';
 
 const PRODUCT_TYPE_LABELS: Record<string, string> = {
   mvp: 'MVP',
@@ -83,21 +83,8 @@ export default function SharedInitiative() {
       {/* Navbar */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center gap-3">
-          <div 
-            className="h-6 w-6 shrink-0"
-            style={{
-              backgroundColor: 'hsl(var(--foreground))',
-              WebkitMaskImage: `url(${wavesLogo})`,
-              WebkitMaskSize: 'contain',
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${wavesLogo})`,
-              maskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              maskPosition: 'center',
-            }}
-          />
-          <span className="text-sm font-medium text-foreground">Waves Portal</span>
+          <img src={scaloLogo} alt="Scalo" className="h-6 w-6 shrink-0 rounded" />
+          <span className="text-sm font-medium text-foreground">Scalo Portal</span>
           <span className="text-xs text-muted-foreground ml-auto">Documento compartido</span>
         </div>
       </header>
@@ -125,7 +112,7 @@ export default function SharedInitiative() {
         {/* Footer */}
         <Separator />
         <div className="text-center text-xs text-muted-foreground py-4 space-y-1">
-          <p>Generado desde Waves Portal</p>
+          <p>Generado desde Scalo Portal</p>
           <p>{new Date().toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
       </main>

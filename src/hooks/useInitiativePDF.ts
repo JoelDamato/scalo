@@ -290,7 +290,7 @@ function addFooters(doc: jsPDF, name: string): void {
     doc.rect(0, 287, 210, 10, 'F');
     doc.setTextColor(COLORS.muted);
     doc.setFontSize(7);
-    doc.text('Waves Portal — Documento generado automáticamente', 15, 293);
+    doc.text('Scalo Portal — Documento generado automáticamente', 15, 293);
     doc.text(`${i} / ${pageCount}`, 190, 293);
   }
 }

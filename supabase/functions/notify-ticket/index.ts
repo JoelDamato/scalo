@@ -56,7 +56,7 @@ serve(async (req) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          source: "Waves Portal",
+          source: "Scalo Portal",
           event: type || "new_ticket",
           timestamp: new Date().toISOString(),
           ticket: {
