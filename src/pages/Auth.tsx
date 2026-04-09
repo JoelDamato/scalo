@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import wavesLogo from '@/assets/waves-logo.png';
+import scaloLogo from '@/assets/scalo-logo.png';
 
 const emailSchema = z.string().email('Ingresá un email válido');
 const passwordSchema = z.string().min(6, 'La contraseña debe tener al menos 6 caracteres');
