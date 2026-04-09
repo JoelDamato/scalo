@@ -18,7 +18,7 @@ import CRM from "./pages/CRM";
 import Auth from "./pages/Auth";
 import Notifications from "./pages/Notifications";
 import Support from "./pages/Support";
-import WhatsApp from "./pages/WhatsApp";
+
 import Resources from "./pages/Resources";
 import SharedInitiative from "./pages/SharedInitiative";
 import NotFound from "./pages/NotFound";
@@ -45,7 +45,7 @@ const App = () => (
               <Route path="/finance" element={<ProtectedRoute adminOnly><Finance /></ProtectedRoute>} />
               <Route path="/crm" element={<ProtectedRoute adminOnly><CRM /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-              <Route path="/whatsapp" element={<ProtectedRoute adminOnly><WhatsApp /></ProtectedRoute>} />
+              
               <Route path="/resources" element={<ProtectedRoute adminOnly><Resources /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/shared/:token" element={<SharedInitiative />} />
