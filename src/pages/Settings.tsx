@@ -4,19 +4,34 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Loader2, Bell } from 'lucide-react';
+import { Moon, Sun, Loader2, Bell, UserPlus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { AvatarUpload } from '@/components/profile/AvatarUpload';
 import { useCurrentProfile, useUpdateProfile } from '@/hooks/useProfiles';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function Settings() {
+  const { isAdmin } = useAuth();
   const { data: profile } = useCurrentProfile();
   const updateProfile = useUpdateProfile();
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'admin' | 'dev' | 'client'>('client');
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
   const pushNotifications = usePushNotifications();
   const { theme, setTheme } = useTheme();
 
@@ -36,6 +51,55 @@ export default function Settings() {
       toast.error('Error al guardar');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUserName.trim() || !newUserEmail.trim() || !newUserPassword.trim()) {
+      toast.error('Completá nombre, email y contraseña');
+      return;
+    }
+
+    if (!newUserEmail.includes('@')) {
+      toast.error('Ingresá un email válido');
+      return;
+    }
+
+    if (newUserPassword.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    setIsCreatingUser(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          name: newUserName.trim(),
+          email: newUserEmail.trim(),
+          password: newUserPassword,
+          role: newUserRole,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success(`Usuario ${newUserRole} creado`);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserRole('client');
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear el usuario');
+    } finally {
+      setIsCreatingUser(false);
     }
   };
 
@@ -155,7 +219,78 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        <Card className="animate-fade-in border-destructive/30" style={{ animationDelay: '150ms' }}>
+        {isAdmin && (
+          <Card className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Altas de Usuarios
+              </CardTitle>
+              <CardDescription>
+                Creá accesos nuevos para admin, dev o clientes desde una cuenta administradora.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="new-user-name">Nombre</Label>
+                  <Input
+                    id="new-user-name"
+                    placeholder="Ej: Joel Damato"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-user-email">Email</Label>
+                  <Input
+                    id="new-user-email"
+                    type="email"
+                    placeholder="usuario@empresa.com"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-user-password">Contraseña temporal</Label>
+                  <Input
+                    id="new-user-password"
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Rol</Label>
+                  <Select value={newUserRole} onValueChange={(value: 'admin' | 'dev' | 'client') => setNewUserRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="client">Cliente</SelectItem>
+                      <SelectItem value="dev">Dev</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-muted/25 p-3 text-xs text-muted-foreground">
+                El usuario se crea confirmado y puede ingresar enseguida con esa contraseña. Si elegís `admin`, tendrá acceso total. Si elegís `dev`, no verá Finanzas.
+              </div>
+
+              <div className="flex justify-end">
+                <Button size="sm" onClick={handleCreateUser} disabled={isCreatingUser}>
+                  {isCreatingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Crear usuario
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="animate-fade-in border-destructive/30" style={{ animationDelay: isAdmin ? '200ms' : '150ms' }}>
           <CardHeader>
             <CardTitle className="text-base text-destructive">Zona de peligro</CardTitle>
             <CardDescription>Acciones irreversibles</CardDescription>

@@ -7,7 +7,12 @@ STABLE
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
-  SELECT public.has_role(_user_id, 'admin') OR public.has_role(_user_id, 'dev')
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND (role = 'admin'::app_role OR role::text = 'dev')
+  )
 $$;
 
 CREATE OR REPLACE FUNCTION public.can_access_finance(_user_id uuid)

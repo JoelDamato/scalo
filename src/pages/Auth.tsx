@@ -4,24 +4,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import scaloLogo from '@/assets/scalo-logo.png';
 
 const emailSchema = z.string().email('Ingresá un email válido');
 const passwordSchema = z.string().min(6, 'La contraseña debe tener al menos 6 caracteres');
-const nameSchema = z.string().min(2, 'El nombre debe tener al menos 2 caracteres');
 
 export default function Auth() {
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, signIn } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
 
   if (loading) {
     return (
@@ -57,32 +52,6 @@ export default function Auth() {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      nameSchema.parse(signupName);
-      emailSchema.parse(signupEmail);
-      passwordSchema.parse(signupPassword);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        toast.error(err.errors[0].message);
-        return;
-      }
-    }
-    setIsSubmitting(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
-    setIsSubmitting(false);
-    if (error) {
-      if (error.message.includes('already registered')) {
-        toast.error('Este email ya está registrado. Iniciá sesión.');
-      } else {
-        toast.error(error.message || 'Error al crear la cuenta');
-      }
-    } else {
-      toast.success('¡Cuenta creada! Revisá tu email para confirmar.');
-    }
-  };
-
   return (
     <div className="min-h-screen flex bg-background">
       {/* Left branding panel — hidden on mobile */}
@@ -115,95 +84,42 @@ export default function Auth() {
           <div className="mb-6">
             <h1 className="text-2xl font-semibold tracking-tight">Bienvenido</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Ingresá a tu cuenta o creá una nueva
+              Ingresá a tu cuenta. Si necesitás acceso, pedilo a un administrador.
             </p>
           </div>
 
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="signup">Crear Cuenta</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="tu@email.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Contraseña</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                <Button type="submit" className="w-full h-11" disabled={isSubmitting}>
-                  {isSubmitting ? 'Ingresando...' : 'Ingresar'}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nombre</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Tu nombre"
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="tu@email.com"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Contraseña</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                <Button type="submit" className="w-full h-11" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta'}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  El primer usuario registrado será administrador
-                </p>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login-email">Email</Label>
+              <Input
+                id="login-email"
+                type="email"
+                placeholder="tu@email.com"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="login-password">Contraseña</Label>
+              <Input
+                id="login-password"
+                type="password"
+                placeholder="••••••••"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+                className="h-11"
+              />
+            </div>
+            <Button type="submit" className="w-full h-11" disabled={isSubmitting}>
+              {isSubmitting ? 'Ingresando...' : 'Ingresar'}
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              El alta de cuentas ahora se gestiona desde una cuenta admin.
+            </p>
+          </form>
         </div>
       </div>
     </div>

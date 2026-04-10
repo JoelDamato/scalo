@@ -11,6 +11,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   name: string;
+  role?: "admin" | "dev" | "client";
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -55,11 +56,13 @@ const handler = async (req: Request): Promise<Response> => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { email, password, name }: CreateUserRequest = await req.json();
+    const { email, password, name, role }: CreateUserRequest = await req.json();
 
     if (!email || !password || !name) {
       throw new Error("Missing required fields: email, password, name");
     }
+
+    const nextRole = role === "admin" || role === "dev" || role === "client" ? role : "client";
 
     // Create the user
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
@@ -73,6 +76,45 @@ const handler = async (req: Request): Promise<Response> => {
       throw createError;
     }
 
+    if (!newUser.user?.id) {
+      throw new Error("User creation did not return an id");
+    }
+
+    const userId = newUser.user.id;
+
+    // Keep a single application role per user because the frontend resolves one role at a time.
+    const { error: deleteRolesError } = await adminClient
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId);
+
+    if (deleteRolesError) {
+      throw deleteRolesError;
+    }
+
+    const { error: roleError } = await adminClient
+      .from("user_roles")
+      .insert({ user_id: userId, role: nextRole });
+
+    if (roleError) {
+      throw roleError;
+    }
+
+    const { error: profileError } = await adminClient
+      .from("profiles")
+      .upsert(
+        {
+          user_id: userId,
+          email,
+          name,
+        },
+        { onConflict: "user_id" },
+      );
+
+    if (profileError) {
+      throw profileError;
+    }
+
     console.log(`User created successfully: ${email}`);
 
     return new Response(
@@ -80,7 +122,8 @@ const handler = async (req: Request): Promise<Response> => {
         success: true, 
         user: { 
           id: newUser.user?.id, 
-          email: newUser.user?.email 
+          email: newUser.user?.email,
+          role: nextRole,
         } 
       }),
       {

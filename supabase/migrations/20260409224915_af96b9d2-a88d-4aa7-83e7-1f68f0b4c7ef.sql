@@ -26,17 +26,26 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
 -- Create the trigger
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
--- Manually create profile and admin role for existing user
-INSERT INTO public.profiles (user_id, email, name)
-VALUES ('d81f977b-359b-49e2-a364-2a7ca514a351', 'damatojoel25@gmail.com', 'damatojoel')
-ON CONFLICT DO NOTHING;
+-- Optionally backfill an existing admin user when that auth user already exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM auth.users WHERE id = 'd81f977b-359b-49e2-a364-2a7ca514a351'
+  ) THEN
+    INSERT INTO public.profiles (user_id, email, name)
+    VALUES ('d81f977b-359b-49e2-a364-2a7ca514a351', 'damatojoel25@gmail.com', 'damatojoel')
+    ON CONFLICT (user_id) DO NOTHING;
 
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('d81f977b-359b-49e2-a364-2a7ca514a351', 'admin'::app_role)
-ON CONFLICT DO NOTHING;
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES ('d81f977b-359b-49e2-a364-2a7ca514a351', 'admin'::app_role)
+    ON CONFLICT (user_id, role) DO NOTHING;
+  END IF;
+END $$;
