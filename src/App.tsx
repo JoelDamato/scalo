@@ -19,6 +19,7 @@ import Finance from "./pages/Finance";
 import Auth from "./pages/Auth";
 import Notifications from "./pages/Notifications";
 import Support from "./pages/Support";
+import Reports from "./pages/Reports";
 
 import Resources from "./pages/Resources";
 import SharedInitiative from "./pages/SharedInitiative";
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/finance" element={<ProtectedRoute financeOnly><Finance /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute adminOnly><Reports /></ProtectedRoute>} />
               
               <Route path="/resources" element={<ProtectedRoute adminOnly><Resources /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />

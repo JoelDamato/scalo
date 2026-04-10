@@ -9,7 +9,8 @@ import {
   ChevronDown,
   Wallet,
   Ticket,
-  BookOpen
+  BookOpen,
+  FileText
 } from 'lucide-react';
 import scaloLogo from '@/assets/scalo-logo.png';
 
@@ -41,6 +42,7 @@ const mainNavItems = [
   { title: 'Tareas', url: '/tasks', icon: CheckSquare },
   { title: 'Soporte', url: '/support', icon: Ticket },
   { title: 'Finanzas', url: '/finance', icon: Wallet },
+  { title: 'Reportes', url: '/reports', icon: FileText },
   { title: 'Recursos', url: '/resources', icon: BookOpen },
   { title: 'Actividad', url: '/activity', icon: Activity },
 ];

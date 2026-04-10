@@ -187,7 +187,7 @@ export function FinanceRecordForm({ record, onSuccess }: FinanceRecordFormProps)
           )}
         />
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <FormField
             control={form.control}
             name="amount"
@@ -248,7 +248,7 @@ export function FinanceRecordForm({ record, onSuccess }: FinanceRecordFormProps)
                 Se guardará en USD y se convertirá a ARS con dólar blue del{' '}
                 <span className="font-medium text-foreground">{conversionPreview.effectiveDate}</span>{' '}
                 ({formatFinanceCurrency(conversionPreview.rate, 'ARS')}).
-                Impacto estimado: <span className="font-semibold text-foreground">{formatFinanceCurrency(conversionPreview.amountArs, 'ARS')}</span>.
+                El ingreso queda guardado en USD y su equivalente estimado es <span className="font-semibold text-foreground">{formatFinanceCurrency(conversionPreview.amountArs, 'ARS')}</span>.
               </p>
             ) : (
               <p className="text-muted-foreground">
@@ -284,7 +284,7 @@ export function FinanceRecordForm({ record, onSuccess }: FinanceRecordFormProps)
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="payment_status"

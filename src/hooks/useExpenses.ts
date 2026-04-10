@@ -179,6 +179,10 @@ export function getExpenseAmountArs(expense: Expense) {
   return Number(expense.resolved_amount_ars ?? expense.amount_ars ?? expense.amount);
 }
 
+export function getExpenseAmountUsd(expense: Expense) {
+  return normalizeFinanceCurrency(expense.currency) === 'USD' ? Number(expense.amount) : 0;
+}
+
 export function getMonthlyRecurringEstimateArs(expense: Expense) {
   if (!expense.is_recurring) {
     return 0;
@@ -370,6 +374,7 @@ export function useExpenseStats() {
   const { data: expenses = [] } = useExpenses();
 
   const totalExpenses = expenses.reduce((sum, e) => sum + getExpenseAmountArs(e), 0);
+  const totalExpensesUsd = expenses.reduce((sum, e) => sum + getExpenseAmountUsd(e), 0);
   const recurringExpenses = expenses.filter(expense => expense.is_recurring);
 
   // Group by category
@@ -388,14 +393,22 @@ export function useExpenseStats() {
   const monthlyExpenses = expenses
     .filter(e => e.expense_date.startsWith(currentMonth))
     .reduce((sum, e) => sum + getExpenseAmountArs(e), 0);
+  const monthlyExpensesUsd = expenses
+    .filter(e => e.expense_date.startsWith(currentMonth))
+    .reduce((sum, e) => sum + getExpenseAmountUsd(e), 0);
 
   // Recurring expenses
   const recurringTotal = expenses
     .filter(e => e.is_recurring)
     .reduce((sum, e) => sum + getExpenseAmountArs(e), 0);
+  const recurringTotalUsd = expenses
+    .filter(e => e.is_recurring)
+    .reduce((sum, e) => sum + getExpenseAmountUsd(e), 0);
 
   const recurringMonthlyEstimate = recurringExpenses
     .reduce((sum, expense) => sum + getMonthlyRecurringEstimateArs(expense), 0);
+  const recurringMonthlyEstimateUsd = recurringExpenses
+    .reduce((sum, expense) => sum + getMonthlyRecurringEstimate(expense), 0);
 
   const nextRecurringExpense = recurringExpenses
     .map(expense => {
@@ -407,9 +420,13 @@ export function useExpenseStats() {
 
   return {
     totalExpenses,
+    totalExpensesUsd,
     monthlyExpenses,
+    monthlyExpensesUsd,
     recurringTotal,
+    recurringTotalUsd,
     recurringMonthlyEstimate,
+    recurringMonthlyEstimateUsd,
     recurringCount: recurringExpenses.length,
     nextRecurringExpense,
     byCategory,

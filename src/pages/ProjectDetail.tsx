@@ -18,6 +18,7 @@ import { CreateInitiativeDialog } from '@/components/initiatives/CreateInitiativ
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProjectMembersSelector } from '@/components/projects/ProjectMembersSelector';
 import { ProjectCredentialsTab } from '@/components/projects/ProjectCredentialsTab';
+import { ProjectInstructionsTab } from '@/components/projects/ProjectInstructionsTab';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -37,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckSquare, LayoutDashboard, Rocket, Plus, Users, Trash2, Pencil, Save, X, CalendarDays, Zap, KeyRound } from 'lucide-react';
+import { CheckSquare, LayoutDashboard, Rocket, Plus, Users, Trash2, Pencil, Save, X, CalendarDays, Zap, KeyRound, FileText } from 'lucide-react';
 import { SprintBoard } from '@/components/sprints/SprintBoard';
 import { ProjectCalendar } from '@/components/projects/ProjectCalendar';
 import { toast } from 'sonner';
@@ -252,6 +253,10 @@ export default function ProjectDetail() {
               <Zap className="h-4 w-4" />
               Sprints
             </TabsTrigger>
+            <TabsTrigger value="instructions" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Instructivos
+            </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="credentials" className="gap-2">
                 <KeyRound className="h-4 w-4" />
@@ -441,6 +446,10 @@ export default function ProjectDetail() {
 
           <TabsContent value="sprints" className="mt-6">
             <SprintBoard projectId={id!} />
+          </TabsContent>
+
+          <TabsContent value="instructions" className="mt-6">
+            <ProjectInstructionsTab projectId={id!} isAdmin={isAdmin} />
           </TabsContent>
 
           {isAdmin && (

@@ -1,6 +1,7 @@
-import { DollarSign, TrendingUp, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, AlertCircle, Landmark, ReceiptText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFinanceStats, useFinanceRecords } from '@/hooks/useFinance';
+import { useExpenseStats } from '@/hooks/useExpenses';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -8,50 +9,64 @@ import { formatFinanceCurrency } from '@/lib/finance-currency';
 
 export function FinanceOverview() {
   const stats = useFinanceStats();
+  const expenseStats = useExpenseStats();
   const { data: records = [], isLoading } = useFinanceRecords();
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {[...Array(5)].map((_, i) => (
           <Skeleton key={i} className="h-32" />
         ))}
       </div>
     );
   }
 
+  const profitArs = stats.totalRevenue - expenseStats.totalExpenses;
+  const profitUsd = stats.totalRevenueUsd - expenseStats.totalExpensesUsd;
+  const jotaArs = profitArs / 2;
+  const jotaUsd = profitUsd / 2;
+
   const statCards = [
     {
-      title: 'Ingresos Totales',
-      value: formatFinanceCurrency(stats.totalRevenue, 'ARS'),
+      title: 'Ingresos',
+      value: formatFinanceCurrency(stats.totalRevenueUsd, 'USD'),
       icon: DollarSign,
-      description: `${stats.recordCount} registros · totales en ARS`,
+      description: `${formatFinanceCurrency(stats.totalRevenue, 'ARS')} · ${stats.recordCount} registros`,
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10',
     },
     {
-      title: 'Este Mes',
-      value: formatFinanceCurrency(stats.monthlyRevenue, 'ARS'),
-      icon: TrendingUp,
-      description: format(new Date(), 'MMMM yyyy', { locale: es }),
-      color: 'text-blue-500',
-      bg: 'bg-blue-500/10',
+      title: 'Egresos',
+      value: formatFinanceCurrency(expenseStats.totalExpensesUsd, 'USD'),
+      icon: ReceiptText,
+      description: `${formatFinanceCurrency(expenseStats.totalExpenses, 'ARS')} · ${expenseStats.expenseCount} gastos`,
+      color: 'text-rose-500',
+      bg: 'bg-rose-500/10',
     },
     {
-      title: 'Pendiente',
-      value: formatFinanceCurrency(stats.pendingRevenue, 'ARS'),
-      icon: Clock,
-      description: 'Por cobrar',
+      title: 'Ganancia',
+      value: formatFinanceCurrency(profitUsd, 'USD'),
+      icon: TrendingUp,
+      description: `${formatFinanceCurrency(profitArs, 'ARS')} · ingresos menos gastos`,
+      color: profitArs >= 0 ? 'text-blue-500' : 'text-rose-500',
+      bg: profitArs >= 0 ? 'bg-blue-500/10' : 'bg-rose-500/10',
+    },
+    {
+      title: 'Total Jota',
+      value: formatFinanceCurrency(jotaUsd, 'USD'),
+      icon: Landmark,
+      description: `${formatFinanceCurrency(jotaArs, 'ARS')} · 50% después de gastos`,
       color: 'text-amber-500',
       bg: 'bg-amber-500/10',
     },
     {
-      title: 'Cobrado',
-      value: formatFinanceCurrency(stats.paidRevenue, 'ARS'),
-      icon: CheckCircle2,
-      description: 'Pagos recibidos',
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10',
+      title: 'Total Tomás',
+      value: formatFinanceCurrency(jotaUsd, 'USD'),
+      icon: Landmark,
+      description: `${formatFinanceCurrency(jotaArs, 'ARS')} · 50% después de gastos`,
+      color: 'text-violet-500',
+      bg: 'bg-violet-500/10',
     },
   ];
 
@@ -60,11 +75,11 @@ export function FinanceOverview() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        Los totales se muestran en ARS. Cuando un ingreso está en USD, se convierte con dólar blue de la fecha del registro.
+        Los montos en USD se mantienen visibles en dólar. Debajo de cada total también ves su equivalente acumulado en ARS.
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {statCards.map((stat) => (
           <Card key={stat.title} className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -81,6 +96,53 @@ export function FinanceOverview() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos del Mes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold">{formatFinanceCurrency(stats.monthlyRevenueUsd, 'USD')}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatFinanceCurrency(stats.monthlyRevenue, 'ARS')} · {format(new Date(), 'MMMM yyyy', { locale: es })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Gastos del Mes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold">{formatFinanceCurrency(expenseStats.monthlyExpensesUsd, 'USD')}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatFinanceCurrency(expenseStats.monthlyExpenses, 'ARS')} · {format(new Date(), 'MMMM yyyy', { locale: es })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pendiente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold">{formatFinanceCurrency(stats.pendingRevenueUsd, 'USD')}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatFinanceCurrency(stats.pendingRevenue, 'ARS')} · por cobrar
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Cobrado</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold">{formatFinanceCurrency(stats.paidRevenueUsd, 'USD')}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatFinanceCurrency(stats.paidRevenue, 'ARS')} · recibido
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Activity */}

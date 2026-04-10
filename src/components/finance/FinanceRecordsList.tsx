@@ -70,7 +70,7 @@ export function FinanceRecordsList() {
           <div className="space-y-1">
             <CardTitle className="text-lg">Registros de Ingresos</CardTitle>
             <CardDescription>
-              Puedes cargar montos en ARS o USD. Los totales se expresan en ARS usando dólar blue para los registros en USD.
+              Puedes cargar montos en ARS o USD. Si un ingreso está en USD, el monto principal queda en dólar y abajo se muestra su equivalente en ARS.
             </CardDescription>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -80,7 +80,7 @@ export function FinanceRecordsList() {
                 Nuevo Registro
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Nuevo Registro de Ingreso</DialogTitle>
               </DialogHeader>
@@ -97,6 +97,7 @@ export function FinanceRecordsList() {
             </div>
           ) : (
             <div className="rounded-lg border border-border/50 overflow-hidden">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -177,6 +178,7 @@ export function FinanceRecordsList() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           )}
         </CardContent>
@@ -184,7 +186,7 @@ export function FinanceRecordsList() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingRecord} onOpenChange={() => setEditingRecord(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Registro</DialogTitle>
           </DialogHeader>

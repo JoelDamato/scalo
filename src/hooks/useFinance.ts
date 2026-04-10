@@ -320,32 +320,53 @@ export function useFinanceStats() {
   const getRecordAmountArs = (record: FinanceRecord) =>
     Number(record.resolved_amount_ars ?? record.amount_ars ?? record.amount);
 
+  const getRecordAmountUsd = (record: FinanceRecord) =>
+    normalizeFinanceCurrency(record.currency) === 'USD' ? Number(record.amount) : 0;
+
   const getRecordMonthKey = (record: FinanceRecord) =>
     (record.invoice_date || record.created_at).slice(0, 7);
   
   const totalRevenue = records.reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+  const totalRevenueUsd = records.reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
   const pendingRevenue = records
     .filter(r => r.payment_status === 'pending')
     .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+  const pendingRevenueUsd = records
+    .filter(r => r.payment_status === 'pending')
+    .reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
   const paidRevenue = records
     .filter(r => r.payment_status === 'paid')
     .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+  const paidRevenueUsd = records
+    .filter(r => r.payment_status === 'paid')
+    .reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
   const partialRevenue = records
     .filter(r => r.payment_status === 'partial')
     .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+  const partialRevenueUsd = records
+    .filter(r => r.payment_status === 'partial')
+    .reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
   
   // Monthly breakdown
   const currentMonth = getTodayInBuenosAires().slice(0, 7);
   const monthlyRevenue = records
     .filter(r => getRecordMonthKey(r) === currentMonth)
     .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+  const monthlyRevenueUsd = records
+    .filter(r => getRecordMonthKey(r) === currentMonth)
+    .reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
   
   return {
     totalRevenue,
+    totalRevenueUsd,
     pendingRevenue,
+    pendingRevenueUsd,
     paidRevenue,
+    paidRevenueUsd,
     partialRevenue,
+    partialRevenueUsd,
     monthlyRevenue,
+    monthlyRevenueUsd,
     recordCount: records.length,
   };
 }

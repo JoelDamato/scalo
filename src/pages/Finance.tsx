@@ -16,7 +16,7 @@ export default function Finance() {
     <AppLayout title="Finanzas" description="Gestión de ingresos y gastos">
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-card border border-border/50 p-1 rounded-xl">
+          <TabsList className="h-auto w-full flex-wrap justify-start bg-card border border-border/50 p-1 rounded-xl">
             <TabsTrigger 
               value="overview" 
               className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"

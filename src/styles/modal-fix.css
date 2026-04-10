@@ -1,0 +1,35 @@
+/* Fix modal positioning and prevent it from being clipped inside tab panels or other containers */
+
+/* Root modal wrapper (adjust selector to match your modal component class if needed) */
+.modal,
+.dialog,
+[role="dialog"],
+.react-modal,
+.rdr-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: calc(100vh - 2rem) !important;
+  overflow-y: auto !important;
+  z-index: 9999 !important;
+}
+
+/* Ensure any modal portal is attached to body; if your modal uses a container, make it visible above other content */
+.modal-backdrop,
+[role="presentation"] {
+  z-index: 9998 !important;
+}
+
+/* Prevent parent containers (like tab panels) from clipping fixed children */
+.tabs-content,
+.tab-panel,
+.tab-content,
+[data-tabs-content] {
+  overflow: visible !important;
+}
+
+/* If using a component library that mounts the modal inside the tab/content, force it out visually */
+.modal-root {
+  position: fixed !important;
+}

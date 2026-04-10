@@ -24,26 +24,26 @@ export function ExpensesSummary() {
   const statCards = [
     {
       title: 'Gastos Totales',
-      value: formatFinanceCurrency(stats.totalExpenses, 'ARS'),
+      value: formatFinanceCurrency(stats.totalExpensesUsd, 'USD'),
       icon: TrendingDown,
-      description: `${stats.expenseCount} registros · totales en ARS`,
+      description: `${formatFinanceCurrency(stats.totalExpenses, 'ARS')} · ${stats.expenseCount} registros`,
       color: 'text-red-400',
       bg: 'bg-red-500/10',
     },
     {
       title: 'Este Mes',
-      value: formatFinanceCurrency(stats.monthlyExpenses, 'ARS'),
+      value: formatFinanceCurrency(stats.monthlyExpensesUsd, 'USD'),
       icon: Calendar,
-      description: format(new Date(), 'MMMM yyyy', { locale: es }),
+      description: `${formatFinanceCurrency(stats.monthlyExpenses, 'ARS')} · ${format(new Date(), 'MMMM yyyy', { locale: es })}`,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
     },
     {
       title: 'Fijos / Mes',
-      value: formatFinanceCurrency(stats.recurringMonthlyEstimate, 'ARS'),
+      value: formatFinanceCurrency(stats.recurringMonthlyEstimateUsd, 'USD'),
       icon: RefreshCw,
       description: stats.recurringCount > 0
-        ? `${stats.recurringCount} gasto${stats.recurringCount > 1 ? 's' : ''} fijo${stats.recurringCount > 1 ? 's' : ''}`
+        ? `${formatFinanceCurrency(stats.recurringMonthlyEstimate, 'ARS')} · ${stats.recurringCount} gasto${stats.recurringCount > 1 ? 's' : ''} fijo${stats.recurringCount > 1 ? 's' : ''}`
         : 'Sin gastos fijos',
       color: 'text-amber-400',
       bg: 'bg-amber-500/10',
@@ -69,7 +69,7 @@ export function ExpensesSummary() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        Los totales se muestran en ARS. Cuando un gasto está en USD, se convierte con dólar blue de la fecha del gasto.
+        Los gastos en USD se muestran en dólar y debajo ves también el acumulado equivalente en ARS.
       </div>
 
       {/* Stats Grid */}

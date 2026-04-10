@@ -33,6 +33,7 @@ import {
   Expense,
   getExpenseAmountArs,
   getCategoryInfo,
+  getMonthlyRecurringEstimate,
   getMonthlyRecurringEstimateArs,
   getNextRecurringOccurrence,
   getRecurringIntervalLabel,
@@ -105,7 +106,7 @@ export function ExpensesList() {
           <CardHeader>
             <CardTitle className="text-lg">Gastos Recurrentes Activos</CardTitle>
             <CardDescription>
-              Tus abonos y suscripciones fijas quedan visibles con su proximo vencimiento y equivalente mensual.
+              Tus abonos y suscripciones fijas quedan visibles con su proximo vencimiento y total mensual en USD y ARS.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -145,6 +146,9 @@ export function ExpensesList() {
                     <div className="text-left sm:text-right">
                       <p className="text-xs text-muted-foreground">Equivalente mensual</p>
                       <p className="font-semibold tabular-nums">
+                        {formatFinanceCurrency(getMonthlyRecurringEstimate(expense), expense.currency)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
                         {formatFinanceCurrency(monthlyEstimateArs, 'ARS')}
                       </p>
                     </div>
@@ -191,7 +195,7 @@ export function ExpensesList() {
             </Button>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={(open) => (open ? setIsCreateOpen(true) : closeCreateDialog())}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{createMode === 'recurring' ? 'Registrar Gasto Recurrente' : 'Registrar Gasto'}</DialogTitle>
                 <DialogDescription>
@@ -216,6 +220,7 @@ export function ExpensesList() {
             </div>
           ) : (
             <div className="rounded-lg border border-border/50 overflow-hidden">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -321,6 +326,7 @@ export function ExpensesList() {
                   })}
                 </TableBody>
               </Table>
+              </div>
             </div>
           )}
         </CardContent>
@@ -328,7 +334,7 @@ export function ExpensesList() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingExpense} onOpenChange={() => setEditingExpense(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Gasto</DialogTitle>
           </DialogHeader>

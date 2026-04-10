@@ -30,6 +30,7 @@ import {
   Expense,
   EXPENSE_CATEGORIES,
   SALARY_EXPENSE_CATEGORY,
+  getMonthlyRecurringEstimate,
   deleteExpenseReceipt,
   isSalaryExpenseCategory,
   uploadExpenseReceipt,
@@ -304,7 +305,7 @@ export function ExpenseForm({ expense, onSuccess, defaultRecurring = false }: Ex
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="amount"
@@ -351,7 +352,7 @@ export function ExpenseForm({ expense, onSuccess, defaultRecurring = false }: Ex
                 Se guardará en USD y se convertirá a ARS con dólar blue del{' '}
                 <span className="font-medium text-foreground">{conversionPreview.effectiveDate}</span>{' '}
                 ({formatFinanceCurrency(conversionPreview.rate, 'ARS')}).
-                Impacto estimado: <span className="font-semibold text-foreground">{formatFinanceCurrency(conversionPreview.amountArs, 'ARS')}</span>.
+                El gasto queda guardado en USD y su equivalente estimado es <span className="font-semibold text-foreground">{formatFinanceCurrency(conversionPreview.amountArs, 'ARS')}</span>.
               </p>
             ) : (
               <p className="text-muted-foreground">
@@ -460,32 +461,65 @@ export function ExpenseForm({ expense, onSuccess, defaultRecurring = false }: Ex
         </div>
 
         {isRecurring && (
-          <FormField
-            control={form.control}
-            name="recurring_interval"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Frecuencia</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || 'monthly'}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar frecuencia" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="weekly">Semanal</SelectItem>
-                    <SelectItem value="monthly">Mensual</SelectItem>
-                    <SelectItem value="quarterly">Trimestral</SelectItem>
-                    <SelectItem value="yearly">Anual</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Finanzas estimara el equivalente mensual segun esta frecuencia.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
+          <div className="space-y-4 rounded-lg border border-border/50 bg-muted/20 p-4">
+            <FormField
+              control={form.control}
+              name="recurring_interval"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Frecuencia</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || 'monthly'}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar frecuencia" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="weekly">Semanal</SelectItem>
+                      <SelectItem value="monthly">Mensual</SelectItem>
+                      <SelectItem value="quarterly">Trimestral</SelectItem>
+                      <SelectItem value="yearly">Anual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Finanzas estimará el equivalente mensual según esta frecuencia.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {Number.isFinite(parseFloat(watchedAmount)) && parseFloat(watchedAmount) > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Equivalente mensual estimado:{' '}
+                <span className="font-semibold text-foreground">
+                  {formatFinanceCurrency(
+                    getMonthlyRecurringEstimate({
+                      amount: parseFloat(watchedAmount),
+                      currency: watchedCurrency,
+                      is_recurring: true,
+                      recurring_interval: form.watch('recurring_interval') || 'monthly',
+                    } as Expense),
+                    watchedCurrency,
+                  )}
+                </span>
+                {watchedCurrency === 'USD' && conversionPreview?.amountArs ? (
+                  <span>
+                    {' '}· {formatFinanceCurrency(
+                      conversionPreview.amountArs / Math.max(parseFloat(watchedAmount), 1) *
+                        getMonthlyRecurringEstimate({
+                          amount: parseFloat(watchedAmount),
+                          currency: watchedCurrency,
+                          is_recurring: true,
+                          recurring_interval: form.watch('recurring_interval') || 'monthly',
+                        } as Expense),
+                      'ARS',
+                    )}
+                  </span>
+                ) : null}
+              </div>
             )}
-          />
+          </div>
         )}
 
         <FormField
