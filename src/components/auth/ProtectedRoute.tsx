@@ -4,10 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   adminOnly?: boolean;
+  financeOnly?: boolean;
 }
 
-export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
-  const { user, loading, isAdmin, role } = useAuth();
+export function ProtectedRoute({ children, adminOnly = false, financeOnly = false }: ProtectedRouteProps) {
+  const { user, loading, isAdmin, role, canAccessFinance } = useAuth();
 
   if (loading) {
     return (
@@ -31,7 +32,11 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
   }
 
   if (adminOnly && !isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (financeOnly && !canAccessFinance) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

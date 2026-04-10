@@ -1,0 +1,2 @@
+ALTER TABLE public.projects
+ADD COLUMN IF NOT EXISTS support_active BOOLEAN NOT NULL DEFAULT false;

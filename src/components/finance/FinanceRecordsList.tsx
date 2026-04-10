@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -33,13 +33,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-  }).format(amount);
-}
+import { formatFinanceCurrency } from '@/lib/finance-currency';
 
 export function FinanceRecordsList() {
   const { data: records = [], isLoading } = useFinanceRecords();
@@ -73,7 +67,12 @@ export function FinanceRecordsList() {
     <>
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Registros de Ingresos</CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="text-lg">Registros de Ingresos</CardTitle>
+            <CardDescription>
+              Puedes cargar montos en ARS o USD. Los totales se expresan en ARS usando dólar blue para los registros en USD.
+            </CardDescription>
+          </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-2">
@@ -142,7 +141,17 @@ export function FinanceRecordsList() {
                         {record.payment_method || '-'}
                       </TableCell>
                       <TableCell className="text-right font-semibold tabular-nums">
-                        {formatCurrency(Number(record.amount))}
+                        <div className="space-y-0.5">
+                          <p className={record.currency === 'USD' ? 'text-emerald-400' : ''}>
+                            {formatFinanceCurrency(Number(record.amount), record.currency)}
+                          </p>
+                          {record.currency === 'USD' && (record.resolved_amount_ars !== null || record.amount_ars !== null) && (
+                            <p className="text-xs font-normal text-muted-foreground">
+                              {formatFinanceCurrency(Number(record.resolved_amount_ars ?? record.amount_ars ?? 0), 'ARS')}
+                              {record.resolved_exchange_rate && ` · blue ${formatFinanceCurrency(Number(record.resolved_exchange_rate), 'ARS')}`}
+                            </p>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

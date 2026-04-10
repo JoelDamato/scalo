@@ -11,11 +11,14 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { KanbanBoard } from '@/components/tasks/KanbanBoard';
 import { InitiativeCard } from '@/components/initiatives/InitiativeCard';
 import { CreateInitiativeDialog } from '@/components/initiatives/CreateInitiativeDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProjectMembersSelector } from '@/components/projects/ProjectMembersSelector';
+import { ProjectCredentialsTab } from '@/components/projects/ProjectCredentialsTab';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckSquare, LayoutDashboard, Rocket, Plus, Users, Trash2, Pencil, Save, X, CalendarDays, Zap } from 'lucide-react';
+import { CheckSquare, LayoutDashboard, Rocket, Plus, Users, Trash2, Pencil, Save, X, CalendarDays, Zap, KeyRound } from 'lucide-react';
 import { SprintBoard } from '@/components/sprints/SprintBoard';
 import { ProjectCalendar } from '@/components/projects/ProjectCalendar';
 import { toast } from 'sonner';
@@ -53,6 +56,7 @@ export default function ProjectDetail() {
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState<'active' | 'completed' | 'on-hold'>('active');
+  const [editSupportActive, setEditSupportActive] = useState(false);
 
   if (!id) {
     return <Navigate to="/projects" replace />;
@@ -100,6 +104,7 @@ export default function ProjectDetail() {
     setEditName(project.name);
     setEditDescription(project.description || '');
     setEditStatus(project.status);
+    setEditSupportActive(project.support_active);
     setIsEditing(true);
   };
 
@@ -115,6 +120,7 @@ export default function ProjectDetail() {
           name: editName,
           description: editDescription,
           status: editStatus,
+          support_active: editSupportActive,
         },
       });
       toast.success('Proyecto actualizado');
@@ -141,6 +147,14 @@ export default function ProjectDetail() {
               <div className="flex items-center gap-3">
                 <CardTitle className="text-lg font-medium">Resumen</CardTitle>
                 <StatusBadge status={project.status} />
+                <Badge
+                  variant="outline"
+                  className={project.support_active
+                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                    : 'border-border/60 bg-muted/40 text-muted-foreground'}
+                >
+                  {project.support_active ? 'Soporte activo' : 'Sin soporte activo'}
+                </Badge>
               </div>
               <div className="flex items-center gap-1">
                 {isAdmin && (
@@ -238,6 +252,12 @@ export default function ProjectDetail() {
               <Zap className="h-4 w-4" />
               Sprints
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="credentials" className="gap-2">
+                <KeyRound className="h-4 w-4" />
+                Contraseñas
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
@@ -293,6 +313,15 @@ export default function ProjectDetail() {
                           </SelectContent>
                         </Select>
                       </div>
+                      <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 p-4">
+                        <div>
+                          <p className="text-sm font-medium">Soporte activo</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Activalo si este proyecto está actualmente cubierto por soporte o mantenimiento.
+                          </p>
+                        </div>
+                        <Switch checked={editSupportActive} onCheckedChange={setEditSupportActive} />
+                      </div>
                     </>
                   ) : (
                     <>
@@ -310,6 +339,10 @@ export default function ProjectDetail() {
                         <div>
                           <p className="text-muted-foreground mb-1">Total de tareas</p>
                           <p className="font-medium">{tasks.length}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground mb-1">Soporte</p>
+                          <p className="font-medium">{project.support_active ? 'Activo' : 'Inactivo'}</p>
                         </div>
                       </div>
                     </>
@@ -409,6 +442,12 @@ export default function ProjectDetail() {
           <TabsContent value="sprints" className="mt-6">
             <SprintBoard projectId={id!} />
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="credentials" className="mt-6">
+              <ProjectCredentialsTab projectId={id!} />
+            </TabsContent>
+          )}
         </Tabs>
 
         <CreateInitiativeDialog

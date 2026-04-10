@@ -1,20 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useExpenses, useExpenseStats, EXPENSE_CATEGORIES, getCategoryInfo, ExpenseCategory } from '@/hooks/useExpenses';
+import { useExpenses, useExpenseStats, getCategoryInfo, ExpenseCategory } from '@/hooks/useExpenses';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingDown, RefreshCw, Calendar, PiggyBank } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-function formatCurrency(amount: number, currency: string = 'ARS') {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency,
-  }).format(amount);
-}
+import { formatFinanceCurrency } from '@/lib/finance-currency';
 
 export function ExpensesSummary() {
   const { isLoading } = useExpenses();
   const stats = useExpenseStats();
+  const nextRecurringExpense = stats.nextRecurringExpense;
 
   if (isLoading) {
     return (
@@ -29,33 +24,39 @@ export function ExpensesSummary() {
   const statCards = [
     {
       title: 'Gastos Totales',
-      value: formatCurrency(stats.totalExpenses),
+      value: formatFinanceCurrency(stats.totalExpenses, 'ARS'),
       icon: TrendingDown,
-      description: `${stats.expenseCount} registros`,
+      description: `${stats.expenseCount} registros · totales en ARS`,
       color: 'text-red-400',
       bg: 'bg-red-500/10',
     },
     {
       title: 'Este Mes',
-      value: formatCurrency(stats.monthlyExpenses),
+      value: formatFinanceCurrency(stats.monthlyExpenses, 'ARS'),
       icon: Calendar,
       description: format(new Date(), 'MMMM yyyy', { locale: es }),
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
     },
     {
-      title: 'Recurrentes',
-      value: formatCurrency(stats.recurringTotal),
+      title: 'Fijos / Mes',
+      value: formatFinanceCurrency(stats.recurringMonthlyEstimate, 'ARS'),
       icon: RefreshCw,
-      description: 'Gastos fijos',
+      description: stats.recurringCount > 0
+        ? `${stats.recurringCount} gasto${stats.recurringCount > 1 ? 's' : ''} fijo${stats.recurringCount > 1 ? 's' : ''}`
+        : 'Sin gastos fijos',
       color: 'text-amber-400',
       bg: 'bg-amber-500/10',
     },
     {
-      title: 'Promedio Mensual',
-      value: formatCurrency(stats.monthlyExpenses || stats.totalExpenses / 12),
+      title: 'Próximo Cargo',
+      value: nextRecurringExpense
+        ? formatFinanceCurrency(Number(nextRecurringExpense.expense.amount), nextRecurringExpense.expense.currency)
+        : 'Sin vencimientos',
       icon: PiggyBank,
-      description: 'Estimado',
+      description: nextRecurringExpense
+        ? `${format(nextRecurringExpense.nextOccurrence, 'dd MMM', { locale: es })} · ${nextRecurringExpense.expense.description}`
+        : 'No hay gastos recurrentes activos',
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
     },
@@ -67,6 +68,10 @@ export function ExpensesSummary() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+        Los totales se muestran en ARS. Cuando un gasto está en USD, se convierte con dólar blue de la fecha del gasto.
+      </div>
+
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
@@ -119,7 +124,7 @@ export function ExpensesSummary() {
                     </div>
                     <div className="flex items-end justify-between">
                       <span className="text-xl font-bold tabular-nums">
-                        {formatCurrency(data.total)}
+                        {formatFinanceCurrency(data.total, 'ARS')}
                       </span>
                       <span className="text-sm font-medium opacity-70">
                         {percentage}%

@@ -4,13 +4,7 @@ import { useFinanceStats, useFinanceRecords } from '@/hooks/useFinance';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-  }).format(amount);
-}
+import { formatFinanceCurrency } from '@/lib/finance-currency';
 
 export function FinanceOverview() {
   const stats = useFinanceStats();
@@ -29,15 +23,15 @@ export function FinanceOverview() {
   const statCards = [
     {
       title: 'Ingresos Totales',
-      value: formatCurrency(stats.totalRevenue),
+      value: formatFinanceCurrency(stats.totalRevenue, 'ARS'),
       icon: DollarSign,
-      description: `${stats.recordCount} registros`,
+      description: `${stats.recordCount} registros · totales en ARS`,
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10',
     },
     {
       title: 'Este Mes',
-      value: formatCurrency(stats.monthlyRevenue),
+      value: formatFinanceCurrency(stats.monthlyRevenue, 'ARS'),
       icon: TrendingUp,
       description: format(new Date(), 'MMMM yyyy', { locale: es }),
       color: 'text-blue-500',
@@ -45,7 +39,7 @@ export function FinanceOverview() {
     },
     {
       title: 'Pendiente',
-      value: formatCurrency(stats.pendingRevenue),
+      value: formatFinanceCurrency(stats.pendingRevenue, 'ARS'),
       icon: Clock,
       description: 'Por cobrar',
       color: 'text-amber-500',
@@ -53,7 +47,7 @@ export function FinanceOverview() {
     },
     {
       title: 'Cobrado',
-      value: formatCurrency(stats.paidRevenue),
+      value: formatFinanceCurrency(stats.paidRevenue, 'ARS'),
       icon: CheckCircle2,
       description: 'Pagos recibidos',
       color: 'text-emerald-500',
@@ -65,6 +59,10 @@ export function FinanceOverview() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+        Los totales se muestran en ARS. Cuando un ingreso está en USD, se convierte con dólar blue de la fecha del registro.
+      </div>
+
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
@@ -121,9 +119,16 @@ export function FinanceOverview() {
                     >
                       {record.payment_status === 'paid' ? 'Pagado' : record.payment_status === 'partial' ? 'Parcial' : 'Pendiente'}
                     </span>
-                    <span className="font-semibold tabular-nums">
-                      {formatCurrency(Number(record.amount))}
-                    </span>
+                    <div className="text-right">
+                      <p className={`font-semibold tabular-nums ${record.currency === 'USD' ? 'text-emerald-400' : ''}`}>
+                        {formatFinanceCurrency(Number(record.amount), record.currency)}
+                      </p>
+                      {record.currency === 'USD' && (record.resolved_amount_ars !== null || record.amount_ars !== null) && (
+                        <p className="text-xs text-muted-foreground">
+                          {formatFinanceCurrency(Number(record.resolved_amount_ars ?? record.amount_ars ?? 0), 'ARS')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

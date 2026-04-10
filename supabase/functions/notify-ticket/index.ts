@@ -32,59 +32,17 @@ serve(async (req) => {
     // Get creator profile
     const { data: creatorProfile } = await supabase
       .from("profiles")
-      .select("name, email")
+      .select("name")
       .eq("user_id", ticket.created_by)
       .single();
 
-    // Get project name if applicable
-    let projectName = null;
-    if (ticket.project_id) {
-      const { data: project } = await supabase
-        .from("projects")
-        .select("name")
-        .eq("id", ticket.project_id)
-        .single();
-      projectName = project?.name;
-    }
-
     const results: string[] = [];
 
-    // 1. Send to n8n webhook
-    const n8nWebhookUrl = "https://lucassilva0.app.n8n.cloud/webhook/lovable-webhook";
-    try {
-      const n8nResponse = await fetch(n8nWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: "Scalo Portal",
-          event: type || "new_ticket",
-          timestamp: new Date().toISOString(),
-          ticket: {
-            id: ticket.id,
-            subject: ticket.subject,
-            description: ticket.description,
-            category: ticket.category,
-            priority: ticket.priority,
-            status: ticket.status,
-            project: projectName,
-          },
-          creator: {
-            name: creatorProfile?.name || "Unknown",
-            email: creatorProfile?.email || "Unknown",
-          },
-        }),
-      });
-      results.push(`n8n: ${n8nResponse.status}`);
-    } catch (e) {
-      console.error("n8n webhook error:", e);
-      results.push(`n8n: error - ${e.message}`);
-    }
-
-    // 2. Send push notifications to all admins
+    // 1. Send push notifications to all internal team members
     const { data: adminRoles } = await supabase
       .from("user_roles")
       .select("user_id")
-      .eq("role", "admin");
+      .in("role", ["admin", "dev"]);
 
     if (adminRoles && adminRoles.length > 0) {
       const adminIds = adminRoles.map((r: any) => r.user_id);
@@ -143,7 +101,7 @@ serve(async (req) => {
       }
     }
 
-    // 3. Create in-app notification for admins
+    // 2. Create in-app notification for the internal team
     if (adminRoles) {
       for (const admin of adminRoles) {
         if (admin.user_id !== ticket.created_by) {

@@ -7,6 +7,7 @@ export interface Project {
   name: string;
   description: string | null;
   status: 'active' | 'completed' | 'on-hold';
+  support_active: boolean;
   client_id: string | null;
   customer_id: string | null;
   created_at: string;
@@ -121,7 +122,7 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (project: { name: string; description?: string; status?: string; client_id?: string; customer_id?: string }) => {
+    mutationFn: async (project: { name: string; description?: string; status?: string; support_active?: boolean; client_id?: string; customer_id?: string }) => {
       const { data, error } = await supabase
         .from('projects')
         .insert(project)
@@ -261,7 +262,7 @@ export function useUpdateProject() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ projectId, updates }: { projectId: string; updates: Partial<Pick<Project, 'name' | 'description' | 'status' | 'customer_id'>> }) => {
+    mutationFn: async ({ projectId, updates }: { projectId: string; updates: Partial<Pick<Project, 'name' | 'description' | 'status' | 'support_active' | 'customer_id'>> }) => {
       const { data, error } = await supabase
         .from('projects')
         .update(updates)

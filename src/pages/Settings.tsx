@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Zap, Loader2, CheckCircle2, Bell } from 'lucide-react';
+import { Moon, Sun, Loader2, Bell } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
@@ -17,8 +17,6 @@ export default function Settings() {
   const updateProfile = useUpdateProfile();
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isTestingN8n, setIsTestingN8n] = useState(false);
-  const [n8nResponse, setN8nResponse] = useState<string | null>(null);
   const pushNotifications = usePushNotifications();
   const { theme, setTheme } = useTheme();
 
@@ -38,43 +36,6 @@ export default function Settings() {
       toast.error('Error al guardar');
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const testN8nConnection = async () => {
-    setIsTestingN8n(true);
-    setN8nResponse(null);
-    
-    try {
-      const response = await fetch('https://lucassilva0.app.n8n.cloud/webhook/lovable-webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source: 'Lovable App',
-          timestamp: new Date().toISOString(),
-          message: 'Test desde Settings',
-        }),
-      });
-      
-      const text = await response.text();
-      
-      if (response.ok) {
-        try {
-          const data = JSON.parse(text);
-          setN8nResponse(JSON.stringify(data, null, 2));
-        } catch {
-          setN8nResponse(text || 'Webhook ejecutado (sin respuesta JSON)');
-        }
-        toast.success('¡Conexión exitosa con n8n!');
-      } else {
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
-    } catch (error) {
-      console.error('n8n error:', error);
-      toast.error('Error conectando con n8n');
-      setN8nResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsTestingN8n(false);
     }
   };
 
@@ -191,55 +152,10 @@ export default function Settings() {
                 disabled={!pushNotifications.isSupported || pushNotifications.isLoading}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Email (vía n8n)</Label>
-                <p className="text-xs text-muted-foreground">
-                  Recibí un email cuando se crea un ticket nuevo
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Activo</span>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="animate-fade-in border-primary/30" style={{ animationDelay: '150ms' }}>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              Integración n8n
-            </CardTitle>
-            <CardDescription>Probá la conexión con tu workflow de n8n</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              onClick={testN8nConnection} 
-              disabled={isTestingN8n}
-              className="gap-2"
-            >
-              {isTestingN8n ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : n8nResponse ? (
-                <CheckCircle2 className="h-4 w-4" />
-              ) : (
-                <Zap className="h-4 w-4" />
-              )}
-              {isTestingN8n ? 'Conectando...' : 'Probar Conexión'}
-            </Button>
-            
-            {n8nResponse && (
-              <div className="p-3 bg-muted rounded-lg">
-                <Label className="text-xs text-muted-foreground mb-2 block">Respuesta de n8n:</Label>
-                <pre className="text-xs overflow-auto whitespace-pre-wrap font-mono">{n8nResponse}</pre>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="animate-fade-in border-destructive/30" style={{ animationDelay: '200ms' }}>
+        <Card className="animate-fade-in border-destructive/30" style={{ animationDelay: '150ms' }}>
           <CardHeader>
             <CardTitle className="text-base text-destructive">Zona de peligro</CardTitle>
             <CardDescription>Acciones irreversibles</CardDescription>

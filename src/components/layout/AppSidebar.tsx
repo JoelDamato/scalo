@@ -8,7 +8,6 @@ import {
   Search,
   ChevronDown,
   Wallet,
-  Users,
   Ticket,
   BookOpen
 } from 'lucide-react';
@@ -37,9 +36,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useState } from 'react';
 
 const mainNavItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Proyectos', url: '/projects', icon: FolderKanban },
-  { title: 'Clientes', url: '/crm', icon: Users },
   { title: 'Tareas', url: '/tasks', icon: CheckSquare },
   { title: 'Soporte', url: '/support', icon: Ticket },
   { title: 'Finanzas', url: '/finance', icon: Wallet },
@@ -48,7 +46,7 @@ const mainNavItems = [
 ];
 
 const clientNavItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Proyectos', url: '/projects', icon: FolderKanban },
   { title: 'Mis Tickets', url: '/support', icon: Ticket },
   { title: 'Actividad', url: '/activity', icon: Activity },
@@ -56,13 +54,14 @@ const clientNavItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const { user, isAdmin, signOut, role } = useAuth();
+  const { user, isAdmin, signOut, role, canAccessFinance } = useAuth();
   const { data: profile } = useCurrentProfile();
   const { data: projects = [] } = useProjects();
   const isCollapsed = state === 'collapsed';
   const [recentsOpen, setRecentsOpen] = useState(true);
 
-  const navItems = isAdmin ? mainNavItems : clientNavItems;
+  const navItems = (isAdmin ? mainNavItems : clientNavItems)
+    .filter((item) => item.url !== '/finance' || canAccessFinance);
   const displayName = profile?.name || user?.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user?.email || '';
   const recentProjects = projects.slice(0, 4);
@@ -72,7 +71,7 @@ export function AppSidebar() {
       {/* Header with logo */}
       <SidebarHeader className="py-5 pb-3 px-4 group-data-[collapsible=icon]:px-2">
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-          <img src={scaloLogo} alt="Scalo" className="h-8 w-8 shrink-0 rounded" />
+          <img src={scaloLogo} alt="Scalo" className="h-10 w-10 shrink-0 rounded-md" />
           {!isCollapsed && (
             <span className="font-semibold text-sidebar-primary text-[15px] tracking-tight">
               Scalo Portal
@@ -102,7 +101,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
-                      end={item.url === '/'}
+                      end={item.url === '/dashboard'}
                       className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-smooth group group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >

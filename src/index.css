@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500&display=swap");
 @import "@fontsource/dm-sans/400.css";
 @import "@fontsource/dm-sans/500.css";
 @import "@fontsource/dm-sans/600.css";
@@ -148,6 +149,20 @@
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+
+  .scalo-landing {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-weight: 300;
+  }
+
+  .scalo-landing h1,
+  .scalo-landing h2,
+  .scalo-landing h3,
+  .scalo-landing h4,
+  .scalo-landing h5,
+  .scalo-landing h6 {
+    font-weight: 500;
   }
 }
 

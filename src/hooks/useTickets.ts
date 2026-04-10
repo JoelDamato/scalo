@@ -111,7 +111,7 @@ export function useCreateTicket() {
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
       
-      // Trigger notifications (n8n email + push + in-app)
+      // Trigger notifications (push + in-app)
       try {
         await supabase.functions.invoke('notify-ticket', {
           body: { ticketId: data.id, type: 'new_ticket' },

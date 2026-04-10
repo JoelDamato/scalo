@@ -1,17 +1,33 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  formatFinanceCurrency,
+  getResolvedAmountArs,
+  getTodayInBuenosAires,
+  normalizeFinanceCurrency,
+  resolveCurrencyAmount,
+} from '@/lib/finance-currency';
 
 export interface FinanceRecord {
   id: string;
   project_id: string | null;
   description: string;
   amount: number;
+  currency: 'ARS' | 'USD';
+  amount_ars: number | null;
+  exchange_rate: number | null;
+  exchange_rate_date: string | null;
+  exchange_source: string | null;
   payment_status: 'pending' | 'paid' | 'partial';
   payment_method: string | null;
   internal_notes: string | null;
   invoice_date: string | null;
   created_at: string;
   updated_at: string;
+  resolved_amount_ars?: number | null;
+  resolved_exchange_rate?: number | null;
+  resolved_exchange_rate_date?: string | null;
+  resolved_exchange_source?: string | null;
   project?: {
     id: string;
     name: string;
@@ -64,7 +80,56 @@ export function useFinanceRecords() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as FinanceRecord[];
+      const records = (data as FinanceRecord[]).map((record) => ({
+        ...record,
+        currency: normalizeFinanceCurrency(record.currency),
+        amount_ars: record.amount_ars !== null ? Number(record.amount_ars) : null,
+        exchange_rate: record.exchange_rate !== null ? Number(record.exchange_rate) : null,
+      }));
+
+      return Promise.all(
+        records.map(async (record) => {
+          const existingAmountArs = getResolvedAmountArs({
+            amount: Number(record.amount),
+            currency: record.currency,
+            amountArs: record.amount_ars,
+          });
+
+          if (existingAmountArs !== null) {
+            return {
+              ...record,
+              resolved_amount_ars: existingAmountArs,
+              resolved_exchange_rate: record.exchange_rate,
+              resolved_exchange_rate_date: record.exchange_rate_date,
+              resolved_exchange_source: record.exchange_source,
+            };
+          }
+
+          try {
+            const conversion = await resolveCurrencyAmount({
+              amount: Number(record.amount),
+              currency: record.currency,
+              date: record.invoice_date || record.created_at.slice(0, 10) || getTodayInBuenosAires(),
+            });
+
+            return {
+              ...record,
+              resolved_amount_ars: conversion.amount_ars,
+              resolved_exchange_rate: conversion.exchange_rate,
+              resolved_exchange_rate_date: conversion.exchange_rate_date,
+              resolved_exchange_source: conversion.exchange_source,
+            };
+          } catch {
+            return {
+              ...record,
+              resolved_amount_ars: null,
+              resolved_exchange_rate: null,
+              resolved_exchange_rate_date: null,
+              resolved_exchange_source: null,
+            };
+          }
+        }),
+      );
     },
   });
 }
@@ -77,6 +142,11 @@ export function useCreateFinanceRecord() {
       project_id?: string | null;
       description: string;
       amount: number;
+      currency?: 'ARS' | 'USD';
+      amount_ars?: number | null;
+      exchange_rate?: number | null;
+      exchange_rate_date?: string | null;
+      exchange_source?: string | null;
       payment_status?: string;
       payment_method?: string | null;
       internal_notes?: string | null;
@@ -101,7 +171,14 @@ export function useUpdateFinanceRecord() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<FinanceRecord>) => {
+    mutationFn: async ({
+      id,
+      resolved_amount_ars,
+      resolved_exchange_rate,
+      resolved_exchange_rate_date,
+      resolved_exchange_source,
+      ...updates
+    }: { id: string } & Partial<FinanceRecord>) => {
       const { data, error } = await supabase
         .from('finance_records')
         .update(updates)
@@ -239,23 +316,29 @@ export function useCreateArcaInvoice() {
 // Stats
 export function useFinanceStats() {
   const { data: records = [] } = useFinanceRecords();
+
+  const getRecordAmountArs = (record: FinanceRecord) =>
+    Number(record.resolved_amount_ars ?? record.amount_ars ?? record.amount);
+
+  const getRecordMonthKey = (record: FinanceRecord) =>
+    (record.invoice_date || record.created_at).slice(0, 7);
   
-  const totalRevenue = records.reduce((sum, r) => sum + Number(r.amount), 0);
+  const totalRevenue = records.reduce((sum, r) => sum + getRecordAmountArs(r), 0);
   const pendingRevenue = records
     .filter(r => r.payment_status === 'pending')
-    .reduce((sum, r) => sum + Number(r.amount), 0);
+    .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
   const paidRevenue = records
     .filter(r => r.payment_status === 'paid')
-    .reduce((sum, r) => sum + Number(r.amount), 0);
+    .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
   const partialRevenue = records
     .filter(r => r.payment_status === 'partial')
-    .reduce((sum, r) => sum + Number(r.amount), 0);
+    .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
   
   // Monthly breakdown
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonth = getTodayInBuenosAires().slice(0, 7);
   const monthlyRevenue = records
-    .filter(r => r.created_at.startsWith(currentMonth))
-    .reduce((sum, r) => sum + Number(r.amount), 0);
+    .filter(r => getRecordMonthKey(r) === currentMonth)
+    .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
   
   return {
     totalRevenue,
@@ -265,4 +348,8 @@ export function useFinanceStats() {
     monthlyRevenue,
     recordCount: records.length,
   };
+}
+
+export function formatFinanceRecordAmount(record: FinanceRecord) {
+  return formatFinanceCurrency(Number(record.amount), record.currency);
 }

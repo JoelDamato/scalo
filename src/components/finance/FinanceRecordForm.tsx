@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,10 +23,17 @@ import {
 import { useCreateFinanceRecord, useUpdateFinanceRecord, FinanceRecord } from '@/hooks/useFinance';
 import { useProjects } from '@/hooks/useData';
 import { toast } from 'sonner';
+import {
+  formatFinanceCurrency,
+  getTodayInBuenosAires,
+  normalizeFinanceCurrency,
+  resolveCurrencyAmount,
+} from '@/lib/finance-currency';
 
 const formSchema = z.object({
   description: z.string().min(1, 'La descripción es requerida'),
   amount: z.string().min(1, 'El monto es requerido'),
+  currency: z.enum(['ARS', 'USD']).default('ARS'),
   project_id: z.string().optional(),
   payment_status: z.enum(['pending', 'paid', 'partial']),
   payment_method: z.string().optional(),
@@ -46,12 +54,19 @@ export function FinanceRecordForm({ record, onSuccess }: FinanceRecordFormProps)
   const { data: projects = [] } = useProjects();
   const createRecord = useCreateFinanceRecord();
   const updateRecord = useUpdateFinanceRecord();
+  const [conversionPreview, setConversionPreview] = useState<{
+    amountArs: number;
+    rate: number | null;
+    effectiveDate: string | null;
+  } | null>(null);
+  const [isResolvingConversion, setIsResolvingConversion] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: record?.description || '',
       amount: record?.amount?.toString() || '',
+      currency: record?.currency || 'ARS',
       project_id: record?.project_id || NO_PROJECT_VALUE,
       payment_status: record?.payment_status || 'pending',
       payment_method: record?.payment_method || '',
@@ -60,11 +75,80 @@ export function FinanceRecordForm({ record, onSuccess }: FinanceRecordFormProps)
     },
   });
 
+  const watchedAmount = form.watch('amount');
+  const watchedCurrency = form.watch('currency');
+  const watchedDate = form.watch('invoice_date');
+
+  useEffect(() => {
+    let cancelled = false;
+    const amount = parseFloat(watchedAmount);
+    const currency = normalizeFinanceCurrency(watchedCurrency);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setConversionPreview(null);
+      setIsResolvingConversion(false);
+      return;
+    }
+
+    if (currency === 'ARS') {
+      setConversionPreview({
+        amountArs: amount,
+        rate: null,
+        effectiveDate: null,
+      });
+      setIsResolvingConversion(false);
+      return;
+    }
+
+    setIsResolvingConversion(true);
+
+    resolveCurrencyAmount({
+      amount,
+      currency,
+      date: watchedDate || getTodayInBuenosAires(),
+    })
+      .then((conversion) => {
+        if (cancelled) return;
+
+        setConversionPreview({
+          amountArs: conversion.amount_ars,
+          rate: conversion.exchange_rate,
+          effectiveDate: conversion.exchange_rate_date,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setConversionPreview(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsResolvingConversion(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [watchedAmount, watchedCurrency, watchedDate]);
+
   const onSubmit = async (data: FormData) => {
     try {
+      const currency = normalizeFinanceCurrency(data.currency);
+      const conversion = await resolveCurrencyAmount({
+        amount: parseFloat(data.amount),
+        currency,
+        date: data.invoice_date || getTodayInBuenosAires(),
+      });
+
       const payload = {
         description: data.description,
         amount: parseFloat(data.amount),
+        currency,
+        amount_ars: conversion.amount_ars,
+        exchange_rate: conversion.exchange_rate,
+        exchange_rate_date: conversion.exchange_rate_date,
+        exchange_source: conversion.exchange_source,
         project_id:
           data.project_id && data.project_id !== NO_PROJECT_VALUE ? data.project_id : null,
         payment_status: data.payment_status,
@@ -103,16 +187,38 @@ export function FinanceRecordForm({ record, onSuccess }: FinanceRecordFormProps)
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <FormField
             control={form.control}
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Monto (ARS)</FormLabel>
+                <FormLabel>Monto</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="0.00" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Moneda</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="ARS">ARS $</SelectItem>
+                    <SelectItem value="USD">USD $</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -132,6 +238,25 @@ export function FinanceRecordForm({ record, onSuccess }: FinanceRecordFormProps)
             )}
           />
         </div>
+
+        {watchedCurrency === 'USD' && (
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm">
+            {isResolvingConversion ? (
+              <p className="text-muted-foreground">Consultando dólar blue para esta fecha...</p>
+            ) : conversionPreview?.rate ? (
+              <p className="text-muted-foreground">
+                Se guardará en USD y se convertirá a ARS con dólar blue del{' '}
+                <span className="font-medium text-foreground">{conversionPreview.effectiveDate}</span>{' '}
+                ({formatFinanceCurrency(conversionPreview.rate, 'ARS')}).
+                Impacto estimado: <span className="font-semibold text-foreground">{formatFinanceCurrency(conversionPreview.amountArs, 'ARS')}</span>.
+              </p>
+            ) : (
+              <p className="text-muted-foreground">
+                No pude obtener la cotización blue para esta fecha. Inténtalo nuevamente antes de guardar.
+              </p>
+            )}
+          </div>
+        )}
 
         <FormField
           control={form.control}

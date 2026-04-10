@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -37,6 +38,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     name: '',
     description: '',
     customer_id: '',
+    support_active: false,
   });
 
   const handleCreate = async () => {
@@ -50,11 +52,12 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         customer_id: formData.customer_id && formData.customer_id !== 'none' ? formData.customer_id : undefined,
+        support_active: formData.support_active,
       });
       
       toast.success('Proyecto creado exitosamente');
       onOpenChange(false);
-      setFormData({ name: '', description: '', customer_id: '' });
+      setFormData({ name: '', description: '', customer_id: '', support_active: false });
       navigate(`/projects/${project.id}`);
     } catch (error) {
       console.error('Error creating project:', error);
@@ -115,6 +118,20 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               </Select>
             </div>
           )}
+
+          <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 p-4">
+            <div className="space-y-1">
+              <Label htmlFor="support-active">Soporte activo</Label>
+              <p className="text-xs text-muted-foreground">
+                Marca este proyecto si está actualmente en etapa de mantenimiento o soporte.
+              </p>
+            </div>
+            <Switch
+              id="support-active"
+              checked={formData.support_active}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, support_active: checked }))}
+            />
+          </div>
         </div>
 
         <DialogFooter>

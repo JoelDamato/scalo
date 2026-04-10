@@ -23,6 +23,7 @@ import { useCreateArcaInvoice, useArcaConfig, useFinanceRecords } from '@/hooks/
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { formatFinanceCurrency } from '@/lib/finance-currency';
 
 const formSchema = z.object({
   finance_record_id: z.string().optional(),
@@ -90,7 +91,7 @@ export function CreateInvoiceForm({ onSuccess }: CreateInvoiceFormProps) {
     form.setValue('finance_record_id', recordId);
     const record = records.find(r => r.id === recordId);
     if (record) {
-      form.setValue('importe_total', record.amount.toString());
+      form.setValue('importe_total', String(record.resolved_amount_ars ?? record.amount_ars ?? record.amount));
     }
   };
 
@@ -121,10 +122,10 @@ export function CreateInvoiceForm({ onSuccess }: CreateInvoiceFormProps) {
                   <SelectContent>
                     <SelectItem value={NO_RECORD_VALUE}>Sin vincular</SelectItem>
                     {pendingRecords.map((record) => (
-                      <SelectItem key={record.id} value={record.id}>
-                        {record.description} - ${record.amount}
-                      </SelectItem>
-                    ))}
+                    <SelectItem key={record.id} value={record.id}>
+                        {record.description} - {formatFinanceCurrency(Number(record.amount), record.currency)}
+                    </SelectItem>
+                  ))}
                   </SelectContent>
                 </Select>
                 <FormDescription>

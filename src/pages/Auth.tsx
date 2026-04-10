@@ -35,7 +35,7 @@ export default function Auth() {
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -89,25 +89,14 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-card border-r border-border">
         <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.02] via-transparent to-foreground/[0.04]" />
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 animate-fade-in">
-          <img src={scaloLogo} alt="Scalo" className="h-16 w-16 mb-6 rounded" />
+          <img
+            src={scaloLogo}
+            alt="Scalo"
+            className="h-28 w-28 mb-8 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
+          />
           <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">
             Scalo Portal
           </h2>
-          <p className="text-muted-foreground text-center max-w-sm text-balance leading-relaxed">
-            Tu espacio centralizado para gestionar proyectos, tareas y clientes con claridad total.
-          </p>
-          <div className="mt-12 grid grid-cols-3 gap-6 text-center">
-            {[
-              { label: 'Proyectos', value: '∞' },
-              { label: 'Clientes', value: '360°' },
-              { label: 'Control', value: '100%' },
-            ].map((item) => (
-              <div key={item.label} className="flex flex-col items-center gap-1">
-                <span className="text-2xl font-bold text-foreground">{item.value}</span>
-                <span className="text-xs text-muted-foreground">{item.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
         {/* Decorative circles */}
         <div className="absolute -bottom-32 -left-32 h-64 w-64 rounded-full bg-foreground/[0.03]" />
@@ -119,7 +108,7 @@ export default function Auth() {
         <div className="w-full max-w-sm animate-fade-in" style={{ animationDelay: '100ms' }}>
           {/* Mobile logo */}
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
-            <img src={scaloLogo} alt="Scalo" className="h-8 w-8 rounded" />
+            <img src={scaloLogo} alt="Scalo" className="h-10 w-10 rounded-lg" />
             <span className="text-lg font-semibold tracking-tight">Scalo Portal</span>
           </div>
 

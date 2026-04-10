@@ -3,18 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from './useProfiles';
 
 export interface AdminProfile extends Profile {
-  role: 'admin';
+  role: 'admin' | 'dev';
 }
 
 export function useAdminProfiles() {
   return useQuery({
     queryKey: ['admin-profiles'],
     queryFn: async () => {
-      // First get all admin user_ids from user_roles
+      // First get all internal team user_ids from user_roles
       const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
-        .eq('role', 'admin');
+        .in('role', ['admin', 'dev']);
       
       if (rolesError) throw rolesError;
       
@@ -24,7 +24,7 @@ export function useAdminProfiles() {
       
       const adminUserIds = adminRoles.map(r => r.user_id);
       
-      // Then get profiles for those admin users
+      // Then get profiles for those internal users
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')

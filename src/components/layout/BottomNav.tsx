@@ -1,30 +1,30 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, CheckSquare, Ticket, Users } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, CheckSquare, Ticket } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 const adminItems = [
-  { label: 'Inicio', icon: LayoutDashboard, path: '/' },
+  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Proyectos', icon: FolderKanban, path: '/projects' },
-  { label: 'Clientes', icon: Users, path: '/crm' },
   { label: 'Tareas', icon: CheckSquare, path: '/tasks' },
   { label: 'Soporte', icon: Ticket, path: '/support' },
 ];
 
 const clientItems = [
-  { label: 'Inicio', icon: LayoutDashboard, path: '/' },
+  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Proyectos', icon: FolderKanban, path: '/projects' },
   { label: 'Soporte', icon: Ticket, path: '/support' },
 ];
 
 export function BottomNav() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, canAccessFinance } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const items = isAdmin ? adminItems : clientItems;
+  const items = (isAdmin ? adminItems : clientItems)
+    .filter((item) => item.path !== '/finance' || canAccessFinance);
 
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/dashboard') return location.pathname === '/dashboard';
     return location.pathname.startsWith(path);
   };
 

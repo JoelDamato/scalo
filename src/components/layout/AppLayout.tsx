@@ -4,9 +4,6 @@ import { AppSidebar } from './AppSidebar';
 import { Separator } from '@/components/ui/separator';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { BottomNav } from './BottomNav';
-// import { VoiceAssistant } from '@/components/voice/VoiceAssistant';
-import { AIChatBot } from '@/components/chat/AIChatBot';
-import { useAuth } from '@/hooks/useAuth';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 interface AppLayoutProps {
@@ -16,7 +13,6 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, title, description }: AppLayoutProps) {
-  const { isAdmin } = useAuth();
   useDocumentTitle(title);
 
   return (
@@ -50,8 +46,6 @@ export function AppLayout({ children, title, description }: AppLayoutProps) {
       </div>
       
       <BottomNav />
-      <AIChatBot />
-      {/* {isAdmin && <VoiceAssistant />} */}
     </SidebarProvider>
   );
 }

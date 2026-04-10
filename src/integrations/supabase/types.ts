@@ -464,42 +464,60 @@ export type Database = {
       expenses: {
         Row: {
           amount: number
+          amount_ars: number | null
           category: Database["public"]["Enums"]["expense_category"]
           created_at: string
           currency: string
           description: string
+          exchange_rate: number | null
+          exchange_rate_date: string | null
+          exchange_source: string | null
           expense_date: string
           id: string
           is_recurring: boolean
           notes: string | null
+          receipt_file_name: string | null
+          receipt_path: string | null
           recurring_interval: string | null
           updated_at: string
           vendor_name: string | null
         }
         Insert: {
           amount: number
+          amount_ars?: number | null
           category?: Database["public"]["Enums"]["expense_category"]
           created_at?: string
           currency?: string
           description: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
+          exchange_source?: string | null
           expense_date?: string
           id?: string
           is_recurring?: boolean
           notes?: string | null
+          receipt_file_name?: string | null
+          receipt_path?: string | null
           recurring_interval?: string | null
           updated_at?: string
           vendor_name?: string | null
         }
         Update: {
           amount?: number
+          amount_ars?: number | null
           category?: Database["public"]["Enums"]["expense_category"]
           created_at?: string
           currency?: string
           description?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
+          exchange_source?: string | null
           expense_date?: string
           id?: string
           is_recurring?: boolean
           notes?: string | null
+          receipt_file_name?: string | null
+          receipt_path?: string | null
           recurring_interval?: string | null
           updated_at?: string
           vendor_name?: string | null
@@ -509,8 +527,13 @@ export type Database = {
       finance_records: {
         Row: {
           amount: number
+          amount_ars: number | null
           created_at: string
+          currency: string
           description: string
+          exchange_rate: number | null
+          exchange_rate_date: string | null
+          exchange_source: string | null
           id: string
           internal_notes: string | null
           invoice_date: string | null
@@ -521,8 +544,13 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_ars?: number | null
           created_at?: string
+          currency?: string
           description: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
+          exchange_source?: string | null
           id?: string
           internal_notes?: string | null
           invoice_date?: string | null
@@ -533,8 +561,13 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_ars?: number | null
           created_at?: string
+          currency?: string
           description?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
+          exchange_source?: string | null
           id?: string
           internal_notes?: string | null
           invoice_date?: string | null
@@ -1084,6 +1117,53 @@ export type Database = {
           },
         ]
       }
+      project_credentials: {
+        Row: {
+          access_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          password: string
+          project_id: string
+          tool_name: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          access_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          password: string
+          project_id: string
+          tool_name: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          access_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          password?: string
+          project_id?: string
+          tool_name?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_credentials_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_knowledge_base: {
         Row: {
           created_at: string
@@ -1160,6 +1240,7 @@ export type Database = {
           id: string
           name: string
           status: string
+          support_active: boolean
           updated_at: string
         }
         Insert: {
@@ -1170,6 +1251,7 @@ export type Database = {
           id?: string
           name: string
           status?: string
+          support_active?: boolean
           updated_at?: string
         }
         Update: {
@@ -1180,6 +1262,7 @@ export type Database = {
           id?: string
           name?: string
           status?: string
+          support_active?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -1718,11 +1801,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_access_finance: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_first_user: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "client"
+      app_role: "admin" | "dev" | "client"
       customer_stage: "lead" | "prospect" | "negotiation" | "client" | "churned"
       expense_category:
         | "lovable"
@@ -1731,6 +1815,7 @@ export type Database = {
         | "hosting"
         | "software"
         | "editor"
+        | "salary"
         | "freelancer"
         | "marketing"
         | "other"
@@ -1894,7 +1979,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "client"],
+      app_role: ["admin", "dev", "client"],
       customer_stage: ["lead", "prospect", "negotiation", "client", "churned"],
       expense_category: [
         "lovable",
@@ -1903,6 +1988,7 @@ export const Constants = {
         "hosting",
         "software",
         "editor",
+        "salary",
         "freelancer",
         "marketing",
         "other",
