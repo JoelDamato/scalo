@@ -1,8 +1,7 @@
-import { ArrowRight, Bot, CalendarCheck2, Clock3, Sparkles } from "lucide-react";
+import { Bot, CalendarCheck2, Clock3, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const DAYS_PER_MONTH = 30;
@@ -45,15 +44,13 @@ export default function RoiCalculator() {
   return (
     <div className="min-h-screen bg-[#050505] text-white">
       <div className="relative overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(72,187,120,0.22),_transparent_42%),radial-gradient(circle_at_80%_0%,_rgba(99,102,241,0.24),_transparent_32%)]" />
-
         <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 pb-20 pt-8 sm:px-6 lg:px-8">
           <header className="flex flex-col items-center gap-6 pt-2 text-center sm:pt-6">
             <Link to="/" className="transition-transform duration-200 hover:scale-[1.02]">
               <img
                 src="/logo.png"
                 alt="Scalo"
-                className="h-auto w-[14rem] sm:w-[18rem] md:w-[24rem] lg:w-[30rem]"
+                className="h-auto w-[8.5rem] sm:w-[10rem] md:w-[12rem] lg:w-[14rem]"
               />
             </Link>
 
@@ -218,16 +215,6 @@ export default function RoiCalculator() {
                       Ya hay margen claro para automatizar respuestas, recuperar agendas y convertir mas sin sumar mas
                       horas operativas.
                     </p>
-                    <Button
-                      asChild
-                      size="lg"
-                      className="h-12 rounded-full bg-white px-6 text-black hover:bg-white/90"
-                    >
-                      <a href="https://wa.me/54935181862" target="_blank" rel="noreferrer">
-                        Quiero ver mi caso con Scalo
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
