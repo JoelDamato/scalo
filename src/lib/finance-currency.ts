@@ -7,7 +7,7 @@ export type FinanceCurrency = typeof FINANCE_CURRENCIES[number];
 export interface BlueRateQuote {
   rate: number;
   effectiveDate: string;
-  source: 'dolarapi-current-blue' | 'argentinadatos-blue' | 'argentinadatos-blue-fallback';
+  source: 'dolarapi-current-blue-venta' | 'argentinadatos-blue-venta' | 'argentinadatos-blue-venta-fallback';
   updatedAt: string | null;
 }
 
@@ -31,6 +31,10 @@ function formatHistoricalPathDate(date: string) {
 
 function parseStableDate(date: string) {
   return new Date(`${date}T12:00:00`);
+}
+
+function getBlueSellRate(data: { venta?: unknown }) {
+  return Number(data.venta);
 }
 
 export function normalizeFinanceCurrency(currency: string | null | undefined): FinanceCurrency {
@@ -67,9 +71,9 @@ export async function fetchBlueRateForDate(requestedDate: string): Promise<BlueR
         const data = await response.json();
 
         return {
-          rate: Number(data.venta),
+          rate: getBlueSellRate(data),
           effectiveDate: (data.fechaActualizacion || today).slice(0, 10),
-          source: 'dolarapi-current-blue',
+          source: 'dolarapi-current-blue-venta',
           updatedAt: data.fechaActualizacion || null,
         } satisfies BlueRateQuote;
       }
@@ -89,9 +93,9 @@ export async function fetchBlueRateForDate(requestedDate: string): Promise<BlueR
         const data = await response.json();
 
         return {
-          rate: Number(data.venta),
+          rate: getBlueSellRate(data),
           effectiveDate: data.fecha || candidateDate,
-          source: offset === 0 ? 'argentinadatos-blue' : 'argentinadatos-blue-fallback',
+          source: offset === 0 ? 'argentinadatos-blue-venta' : 'argentinadatos-blue-venta-fallback',
           updatedAt: data.fecha || candidateDate,
         } satisfies BlueRateQuote;
       }

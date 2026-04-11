@@ -175,6 +175,14 @@ export function getMonthlyRecurringEstimate(expense: Expense) {
   }
 }
 
+export function getMonthlyRecurringEstimateUsd(expense: Expense) {
+  if (!expense.is_recurring || normalizeFinanceCurrency(expense.currency) !== 'USD') {
+    return 0;
+  }
+
+  return getMonthlyRecurringEstimate(expense);
+}
+
 export function getExpenseAmountArs(expense: Expense) {
   return Number(expense.resolved_amount_ars ?? expense.amount_ars ?? expense.amount);
 }
@@ -408,7 +416,7 @@ export function useExpenseStats() {
   const recurringMonthlyEstimate = recurringExpenses
     .reduce((sum, expense) => sum + getMonthlyRecurringEstimateArs(expense), 0);
   const recurringMonthlyEstimateUsd = recurringExpenses
-    .reduce((sum, expense) => sum + getMonthlyRecurringEstimate(expense), 0);
+    .reduce((sum, expense) => sum + getMonthlyRecurringEstimateUsd(expense), 0);
 
   const nextRecurringExpense = recurringExpenses
     .map(expense => {

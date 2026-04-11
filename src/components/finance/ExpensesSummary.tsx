@@ -24,26 +24,26 @@ export function ExpensesSummary() {
   const statCards = [
     {
       title: 'Gastos Totales',
-      value: formatFinanceCurrency(stats.totalExpensesUsd, 'USD'),
+      value: formatFinanceCurrency(stats.totalExpenses, 'ARS'),
       icon: TrendingDown,
-      description: `${formatFinanceCurrency(stats.totalExpenses, 'ARS')} · ${stats.expenseCount} registros`,
+      description: `${formatFinanceCurrency(stats.totalExpensesUsd, 'USD')} cargados en USD · ${stats.expenseCount} registros`,
       color: 'text-red-400',
       bg: 'bg-red-500/10',
     },
     {
       title: 'Este Mes',
-      value: formatFinanceCurrency(stats.monthlyExpensesUsd, 'USD'),
+      value: formatFinanceCurrency(stats.monthlyExpenses, 'ARS'),
       icon: Calendar,
-      description: `${formatFinanceCurrency(stats.monthlyExpenses, 'ARS')} · ${format(new Date(), 'MMMM yyyy', { locale: es })}`,
+      description: `${formatFinanceCurrency(stats.monthlyExpensesUsd, 'USD')} cargados en USD · ${format(new Date(), 'MMMM yyyy', { locale: es })}`,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
     },
     {
       title: 'Fijos / Mes',
-      value: formatFinanceCurrency(stats.recurringMonthlyEstimateUsd, 'USD'),
+      value: formatFinanceCurrency(stats.recurringMonthlyEstimate, 'ARS'),
       icon: RefreshCw,
       description: stats.recurringCount > 0
-        ? `${formatFinanceCurrency(stats.recurringMonthlyEstimate, 'ARS')} · ${stats.recurringCount} gasto${stats.recurringCount > 1 ? 's' : ''} fijo${stats.recurringCount > 1 ? 's' : ''}`
+        ? `${formatFinanceCurrency(stats.recurringMonthlyEstimateUsd, 'USD')} cargados en USD · ${stats.recurringCount} gasto${stats.recurringCount > 1 ? 's' : ''} fijo${stats.recurringCount > 1 ? 's' : ''}`
         : 'Sin gastos fijos',
       color: 'text-amber-400',
       bg: 'bg-amber-500/10',
@@ -69,7 +69,7 @@ export function ExpensesSummary() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        Los gastos en USD se muestran en dólar y debajo ves también el acumulado equivalente en ARS.
+        Los totales se muestran en ARS y suman gastos en pesos más USD convertidos al dólar blue venta.
       </div>
 
       {/* Stats Grid */}

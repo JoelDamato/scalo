@@ -1,44 +1,41 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { ClientProjectCard } from './ClientProjectCard';
-import type { Project, Task, Activity } from '@/hooks/useData';
+import { TaskActivityChart } from './TaskActivityChart';
+import type { Project, Task } from '@/hooks/useData';
+import type { TaskAssignee } from '@/hooks/useTaskAssignees';
+import type { Profile } from '@/hooks/useProfiles';
 import { 
   FolderKanban, 
   MessageSquare, 
   CheckCircle2, 
   Clock, 
   ArrowRight,
-  Sparkles,
-  Bell
+  Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 interface ClientDashboardProps {
   userName: string;
   projects: Project[];
   tasks: Task[];
-  activities: Activity[];
+  assignees: TaskAssignee[];
+  profiles: Profile[];
 }
 
-export function ClientDashboard({ userName, projects, tasks, activities }: ClientDashboardProps) {
+export function ClientDashboard({ userName, projects, tasks, assignees, profiles }: ClientDashboardProps) {
   const navigate = useNavigate();
   
   // Filter client-visible tasks
   const visibleTasks = tasks.filter(t => t.is_client_visible);
   
   // Key metrics for client
-  const needsInput = visibleTasks.filter(t => t.status === 'review' && t.client_input_required);
+  const reviewTasks = visibleTasks.filter(t => t.status === 'review');
   const inProgress = visibleTasks.filter(t => t.status === 'in-progress');
   const completed = visibleTasks.filter(t => t.status === 'done');
   const totalProgress = visibleTasks.length > 0 
     ? Math.round((completed.length / visibleTasks.length) * 100) 
     : 0;
-
-  // Recent project activities
-  const recentActivities = activities.slice(0, 5);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -55,33 +52,6 @@ export function ClientDashboard({ userName, projects, tasks, activities }: Clien
           Aquí está el estado actual de tus proyectos.
         </p>
       </div>
-
-      {/* Quick Action: Needs Input */}
-      {needsInput.length > 0 && (
-        <Card className="border-status-review/30 bg-status-review/5 animate-fade-in">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-status-review/20">
-                  <Bell className="h-6 w-6 text-status-review animate-pulse" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {needsInput.length} tarea{needsInput.length > 1 ? 's' : ''} necesita{needsInput.length > 1 ? 'n' : ''} tu feedback
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Tu input es clave para continuar con el desarrollo
-                  </p>
-                </div>
-              </div>
-              <Button onClick={() => navigate('/projects')} className="gap-2">
-                Ver tareas
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Stats Overview */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -121,7 +91,7 @@ export function ClientDashboard({ userName, projects, tasks, activities }: Clien
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Esperando Review</p>
-                <p className="text-3xl font-bold">{needsInput.length}</p>
+                <p className="text-3xl font-bold">{reviewTasks.length}</p>
               </div>
             </div>
           </CardContent>
@@ -142,7 +112,7 @@ export function ClientDashboard({ userName, projects, tasks, activities }: Clien
         </Card>
       </div>
 
-      {/* Main Content: Projects + Activity */}
+      {/* Main Content: Projects + Task chart */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Projects List - Takes 2 columns */}
         <div className="lg:col-span-2 space-y-4">
@@ -174,66 +144,9 @@ export function ClientDashboard({ userName, projects, tasks, activities }: Clien
           )}
         </div>
 
-        {/* Activity Feed */}
+        {/* Task Activity */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Actividad Reciente</h3>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/activity')}>
-              Ver todo
-            </Button>
-          </div>
-          
-          <Card>
-            <CardContent className="pt-4">
-              {recentActivities.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-8 text-center">
-                  Sin actividad reciente
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {recentActivities.map((activity) => (
-                    <div key={activity.id} className="flex gap-3 pb-4 border-b border-border/50 last:border-0 last:pb-0">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm leading-relaxed">{activity.message}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(activity.created_at), { 
-                            addSuffix: true, 
-                            locale: es 
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Tasks Requiring Input */}
-          {needsInput.length > 0 && (
-            <>
-              <h3 className="text-lg font-semibold pt-2">Esperando tu Feedback</h3>
-              <Card className="border-status-review/30">
-                <CardContent className="pt-4 space-y-3">
-                  {needsInput.slice(0, 3).map(task => (
-                    <div 
-                      key={task.id} 
-                      className="flex items-center justify-between p-3 rounded-lg bg-status-review/5 border border-status-review/20 hover:bg-status-review/10 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/projects/${task.project_id}`)}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{task.title}</p>
-                      </div>
-                      <StatusBadge status={task.status} />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </>
-          )}
+          <TaskActivityChart tasks={visibleTasks} assignees={assignees} profiles={profiles} />
         </div>
       </div>
     </div>

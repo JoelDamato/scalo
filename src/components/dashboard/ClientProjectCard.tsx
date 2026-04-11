@@ -23,7 +23,6 @@ export function ClientProjectCard({ project, tasks }: ClientProjectCardProps) {
   const totalTasks = tasks.length;
   const completedTasks = taskCounts.done;
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-  const needsInput = tasks.filter(t => t.status === 'review' && t.client_input_required).length;
 
   return (
     <Card className="animate-fade-in group hover:border-primary/30 transition-all duration-300">
@@ -80,18 +79,6 @@ export function ClientProjectCard({ project, tasks }: ClientProjectCardProps) {
             </div>
           </div>
         </div>
-
-        {/* Needs Input Alert */}
-        {needsInput > 0 && (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-status-review/10 border border-status-review/20">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-status-review/20">
-              <MessageSquare className="h-4 w-4 text-status-review" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">{needsInput} tarea{needsInput > 1 ? 's' : ''} esperando tu feedback</p>
-            </div>
-          </div>
-        )}
 
         {/* View Project Button */}
         <Button 

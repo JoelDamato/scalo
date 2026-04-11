@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTasksAssignees } from '@/hooks/useTaskAssignees';
 import { useProfiles } from '@/hooks/useProfiles';
+import { ProjectTicketsColumn } from './ProjectTicketsColumn';
 
 interface KanbanBoardProps {
   projectId?: string;
@@ -76,6 +77,9 @@ export function KanbanBoard({ projectId, mode = 'project' }: KanbanBoardProps) {
               profiles={profiles}
             />
           ))}
+          {projectId && mode === 'project' && (
+            <ProjectTicketsColumn projectId={projectId} isReadOnly />
+          )}
         </div>
 
         <TaskDetailSheet
@@ -103,6 +107,9 @@ export function KanbanBoard({ projectId, mode = 'project' }: KanbanBoardProps) {
               profiles={profiles}
             />
           ))}
+          {projectId && mode === 'project' && (
+            <ProjectTicketsColumn projectId={projectId} />
+          )}
         </div>
       </DragDropContext>
 

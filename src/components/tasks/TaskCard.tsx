@@ -1,5 +1,5 @@
 import type { Task } from '@/hooks/useData';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUpdateTask } from '@/hooks/useData';
 import { useAuth } from '@/hooks/useAuth';
@@ -55,6 +55,16 @@ export function TaskCard({ task, isDragging, onClick, isReadOnly, assignees = []
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
           {task.description}
         </p>
+      )}
+
+      {task.scheduled_date && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <CalendarClock className="h-3 w-3" />
+          <span>
+            {task.scheduled_date}
+            {task.scheduled_time ? ` · ${task.scheduled_time.slice(0, 5)}` : ''}
+          </span>
+        </div>
       )}
 
       <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">

@@ -30,41 +30,41 @@ export function FinanceOverview() {
   const statCards = [
     {
       title: 'Ingresos',
-      value: formatFinanceCurrency(stats.totalRevenueUsd, 'USD'),
+      value: formatFinanceCurrency(stats.totalRevenue, 'ARS'),
       icon: DollarSign,
-      description: `${formatFinanceCurrency(stats.totalRevenue, 'ARS')} · ${stats.recordCount} registros`,
+      description: `${formatFinanceCurrency(stats.totalRevenueUsd, 'USD')} cargados en USD · ${stats.recordCount} registros`,
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10',
     },
     {
       title: 'Egresos',
-      value: formatFinanceCurrency(expenseStats.totalExpensesUsd, 'USD'),
+      value: formatFinanceCurrency(expenseStats.totalExpenses, 'ARS'),
       icon: ReceiptText,
-      description: `${formatFinanceCurrency(expenseStats.totalExpenses, 'ARS')} · ${expenseStats.expenseCount} gastos`,
+      description: `${formatFinanceCurrency(expenseStats.totalExpensesUsd, 'USD')} cargados en USD · ${expenseStats.expenseCount} gastos`,
       color: 'text-rose-500',
       bg: 'bg-rose-500/10',
     },
     {
       title: 'Ganancia',
-      value: formatFinanceCurrency(profitUsd, 'USD'),
+      value: formatFinanceCurrency(profitArs, 'ARS'),
       icon: TrendingUp,
-      description: `${formatFinanceCurrency(profitArs, 'ARS')} · ingresos menos gastos`,
+      description: `${formatFinanceCurrency(profitUsd, 'USD')} neto en USD · ingresos menos gastos`,
       color: profitArs >= 0 ? 'text-blue-500' : 'text-rose-500',
       bg: profitArs >= 0 ? 'bg-blue-500/10' : 'bg-rose-500/10',
     },
     {
       title: 'Total Jota',
-      value: formatFinanceCurrency(jotaUsd, 'USD'),
+      value: formatFinanceCurrency(jotaArs, 'ARS'),
       icon: Landmark,
-      description: `${formatFinanceCurrency(jotaArs, 'ARS')} · 50% después de gastos`,
+      description: `${formatFinanceCurrency(jotaUsd, 'USD')} · 50% después de gastos`,
       color: 'text-amber-500',
       bg: 'bg-amber-500/10',
     },
     {
       title: 'Total Tomás',
-      value: formatFinanceCurrency(jotaUsd, 'USD'),
+      value: formatFinanceCurrency(jotaArs, 'ARS'),
       icon: Landmark,
-      description: `${formatFinanceCurrency(jotaArs, 'ARS')} · 50% después de gastos`,
+      description: `${formatFinanceCurrency(jotaUsd, 'USD')} · 50% después de gastos`,
       color: 'text-violet-500',
       bg: 'bg-violet-500/10',
     },
@@ -75,7 +75,7 @@ export function FinanceOverview() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        Los montos en USD se mantienen visibles en dólar. Debajo de cada total también ves su equivalente acumulado en ARS.
+        Los totales principales se muestran en ARS, convirtiendo los USD al dólar blue venta. El USD queda como referencia debajo.
       </div>
 
       {/* Stats Grid */}
@@ -104,9 +104,9 @@ export function FinanceOverview() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos del Mes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">{formatFinanceCurrency(stats.monthlyRevenueUsd, 'USD')}</div>
+            <div className="text-xl font-bold">{formatFinanceCurrency(stats.monthlyRevenue, 'ARS')}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {formatFinanceCurrency(stats.monthlyRevenue, 'ARS')} · {format(new Date(), 'MMMM yyyy', { locale: es })}
+              {formatFinanceCurrency(stats.monthlyRevenueUsd, 'USD')} cargados en USD · {format(new Date(), 'MMMM yyyy', { locale: es })}
             </p>
           </CardContent>
         </Card>
@@ -115,9 +115,9 @@ export function FinanceOverview() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Gastos del Mes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">{formatFinanceCurrency(expenseStats.monthlyExpensesUsd, 'USD')}</div>
+            <div className="text-xl font-bold">{formatFinanceCurrency(expenseStats.monthlyExpenses, 'ARS')}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {formatFinanceCurrency(expenseStats.monthlyExpenses, 'ARS')} · {format(new Date(), 'MMMM yyyy', { locale: es })}
+              {formatFinanceCurrency(expenseStats.monthlyExpensesUsd, 'USD')} cargados en USD · {format(new Date(), 'MMMM yyyy', { locale: es })}
             </p>
           </CardContent>
         </Card>
@@ -126,9 +126,9 @@ export function FinanceOverview() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Pendiente</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">{formatFinanceCurrency(stats.pendingRevenueUsd, 'USD')}</div>
+            <div className="text-xl font-bold">{formatFinanceCurrency(stats.pendingRevenue, 'ARS')}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {formatFinanceCurrency(stats.pendingRevenue, 'ARS')} · por cobrar
+              {formatFinanceCurrency(stats.pendingRevenueUsd, 'USD')} cargados en USD · por cobrar
             </p>
           </CardContent>
         </Card>
@@ -137,9 +137,9 @@ export function FinanceOverview() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Cobrado</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">{formatFinanceCurrency(stats.paidRevenueUsd, 'USD')}</div>
+            <div className="text-xl font-bold">{formatFinanceCurrency(stats.paidRevenue, 'ARS')}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {formatFinanceCurrency(stats.paidRevenue, 'ARS')} · recibido
+              {formatFinanceCurrency(stats.paidRevenueUsd, 'USD')} cargados en USD · recibido
             </p>
           </CardContent>
         </Card>

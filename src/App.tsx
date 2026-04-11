@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -12,14 +12,14 @@ import Index from "./pages/Index";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import InitiativeDetail from "./pages/InitiativeDetail";
-import Tasks from "./pages/Tasks";
-import Activity from "./pages/Activity";
+import MyTasks from "./pages/MyTasks";
 import Settings from "./pages/Settings";
 import Finance from "./pages/Finance";
 import Auth from "./pages/Auth";
 import Notifications from "./pages/Notifications";
 import Support from "./pages/Support";
 import Reports from "./pages/Reports";
+import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
 
 import Resources from "./pages/Resources";
 import SharedInitiative from "./pages/SharedInitiative";
@@ -41,12 +41,14 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/calculadoraderoi" element={<RoiCalculator />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />
               <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
               <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
               <Route path="/projects/:id/initiatives/:initiativeId" element={<ProtectedRoute><InitiativeDetail /></ProtectedRoute>} />
-              <Route path="/tasks" element={<ProtectedRoute adminOnly><Tasks /></ProtectedRoute>} />
-              <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+              <Route path="/tasks" element={<Navigate to="/my-tasks" replace />} />
+              <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
+              <Route path="/activity" element={<Navigate to="/dashboard" replace />} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/finance" element={<ProtectedRoute financeOnly><Finance /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />

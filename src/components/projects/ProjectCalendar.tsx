@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { GoogleCalendarSyncButton } from '@/components/google/GoogleCalendarSyncButton';
 
 interface ProjectCalendarProps {
   projectId: string;
@@ -50,6 +51,7 @@ export function ProjectCalendar({ projectId }: ProjectCalendarProps) {
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newTime, setNewTime] = useState('');
+  const [newEndTime, setNewEndTime] = useState('');
   const [newType, setNewType] = useState('checkpoint');
 
   const eventsForDate = selectedDate
@@ -67,12 +69,14 @@ export function ProjectCalendar({ projectId }: ProjectCalendarProps) {
         description: newDescription.trim() || undefined,
         event_date: format(selectedDate, 'yyyy-MM-dd'),
         event_time: newTime || undefined,
+        event_end_time: newEndTime || undefined,
         event_type: newType,
       });
       toast.success('Evento creado');
       setNewTitle('');
       setNewDescription('');
       setNewTime('');
+      setNewEndTime('');
       setNewType('checkpoint');
       setDialogOpen(false);
     } catch {
@@ -170,12 +174,12 @@ export function ProjectCalendar({ projectId }: ProjectCalendarProps) {
                   >
                     <div className={cn('h-2.5 w-2.5 rounded-full mt-1.5 shrink-0', typeConfig.color)} />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{event.title}</p>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                          {typeConfig.label}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{event.title}</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        {typeConfig.label}
+                      </span>
+                    </div>
                       {event.description && (
                         <p className="text-xs text-muted-foreground mt-1">{event.description}</p>
                       )}
@@ -183,8 +187,12 @@ export function ProjectCalendar({ projectId }: ProjectCalendarProps) {
                         <div className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           {event.event_time.slice(0, 5)}
+                          {event.event_end_time ? ` - ${event.event_end_time.slice(0, 5)}` : ''}
                         </div>
                       )}
+                      <div className="mt-2">
+                        <GoogleCalendarSyncButton sourceType="project_event" sourceId={event.id} />
+                      </div>
                     </div>
                     {(isAdmin || true) && (
                       <Button
@@ -206,7 +214,7 @@ export function ProjectCalendar({ projectId }: ProjectCalendarProps) {
 
       {/* Create Event Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nuevo Evento</DialogTitle>
           </DialogHeader>
@@ -234,13 +242,21 @@ export function ProjectCalendar({ projectId }: ProjectCalendarProps) {
                 rows={2}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Hora</label>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Desde</label>
                 <Input
                   type="time"
                   value={newTime}
                   onChange={e => setNewTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Hasta</label>
+                <Input
+                  type="time"
+                  value={newEndTime}
+                  onChange={e => setNewEndTime(e.target.value)}
                 />
               </div>
               <div>

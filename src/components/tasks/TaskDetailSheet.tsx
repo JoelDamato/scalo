@@ -32,11 +32,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Send, Pencil, Trash2, X, Check, Users } from 'lucide-react';
+import { Send, Pencil, Trash2, X, Check, Users, CalendarClock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { TaskChecklist } from './TaskChecklist';
+import { GoogleCalendarSyncButton } from '@/components/google/GoogleCalendarSyncButton';
 
 interface TaskDetailSheetProps {
   task: Task | null;
@@ -46,13 +47,16 @@ interface TaskDetailSheetProps {
 
 export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
   function TaskDetailSheet({ task, open, onOpenChange }, ref) {
-    const { isAdmin } = useAuth();
+    const { isAdmin, user } = useAuth();
     const [newComment, setNewComment] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState('');
     const [editDescription, setEditDescription] = useState('');
     const [editClientVisible, setEditClientVisible] = useState(false);
     const [editClientInput, setEditClientInput] = useState(false);
+    const [editScheduledDate, setEditScheduledDate] = useState('');
+    const [editScheduledTime, setEditScheduledTime] = useState('');
+    const [editScheduledEndTime, setEditScheduledEndTime] = useState('');
     const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
     
     const { data: comments = [] } = useComments(task?.id || '');
@@ -80,6 +84,9 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
       setEditDescription(task.description || '');
       setEditClientVisible(task.is_client_visible);
       setEditClientInput(task.client_input_required);
+      setEditScheduledDate(task.scheduled_date || '');
+      setEditScheduledTime(task.scheduled_time?.slice(0, 5) || '');
+      setEditScheduledEndTime(task.scheduled_end_time?.slice(0, 5) || '');
       setSelectedAssignees(assignees.map(a => a.user_id));
       setIsEditing(true);
     };
@@ -103,6 +110,9 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
             description: editDescription.trim() || null,
             is_client_visible: editClientVisible,
             client_input_required: editClientInput,
+            scheduled_date: editScheduledDate || null,
+            scheduled_time: editScheduledTime || null,
+            scheduled_end_time: editScheduledEndTime || null,
           }
         });
         
@@ -179,6 +189,20 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
       return assignees
         .map(a => profiles.find(p => p.user_id === a.user_id))
         .filter(Boolean);
+    };
+
+    const isAssignedToCurrentUser = !!user?.id && assignees.some((assignee) => assignee.user_id === user.id);
+
+    const handleAssignToMe = async () => {
+      if (!user?.id) return;
+
+      try {
+        const nextAssignees = Array.from(new Set([...assignees.map((item) => item.user_id), user.id]));
+        await setAssignees.mutateAsync({ taskId: task.id, userIds: nextAssignees });
+        toast.success('Te asignaste la tarea');
+      } catch {
+        toast.error('No pude asignarte la tarea');
+      }
     };
 
     return (
@@ -275,6 +299,11 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
                 <Users className="h-3 w-3" />
                 Responsables
               </h4>
+              {!isEditing && isAdmin && user && !isAssignedToCurrentUser && (
+                <Button size="sm" variant="outline" className="mb-3" onClick={handleAssignToMe} disabled={setAssignees.isPending}>
+                  Asignármela
+                </Button>
+              )}
               {isEditing && isAdmin ? (
                 <div className="space-y-2 p-3 bg-muted/50 rounded-lg max-h-48 overflow-y-auto">
                   {adminProfiles.map(profile => (
@@ -318,6 +347,48 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
                     ))
                   ) : (
                     <p className="text-sm text-muted-foreground italic">Sin responsables asignados</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-2">
+                <CalendarClock className="h-3 w-3" />
+                Agenda
+              </h4>
+              {isEditing && isAdmin ? (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div>
+                    <Label className="mb-1.5 block text-xs text-muted-foreground">Fecha</Label>
+                    <Input type="date" value={editScheduledDate} onChange={(e) => setEditScheduledDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="mb-1.5 block text-xs text-muted-foreground">Desde</Label>
+                    <Input type="time" value={editScheduledTime} onChange={(e) => setEditScheduledTime(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="mb-1.5 block text-xs text-muted-foreground">Hasta</Label>
+                    <Input type="time" value={editScheduledEndTime} onChange={(e) => setEditScheduledEndTime(e.target.value)} />
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg border bg-muted/20 p-3">
+                  {task.scheduled_date ? (
+                    <>
+                      <p className="text-sm font-medium">
+                        {task.scheduled_date}
+                        {task.scheduled_time ? ` · ${task.scheduled_time.slice(0, 5)}` : ''}
+                        {task.scheduled_end_time ? ` - ${task.scheduled_end_time.slice(0, 5)}` : ''}
+                      </p>
+                      <div className="mt-3">
+                        <GoogleCalendarSyncButton sourceType="task" sourceId={task.id} />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Esta tarea todavía no tiene fecha y hora para poder enviarla al calendario.
+                    </p>
                   )}
                 </div>
               )}

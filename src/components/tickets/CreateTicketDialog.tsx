@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ImageIcon, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCreateTicket, TicketCategory, TicketPriority } from '@/hooks/useTickets';
+import { MAX_TICKET_IMAGE_SIZE, useCreateTicket, TicketCategory, TicketPriority } from '@/hooks/useTickets';
 import { useProjects } from '@/hooks/useData';
 import { toast } from 'sonner';
 
@@ -51,6 +52,7 @@ export function CreateTicketDialog({
   const [category, setCategory] = useState<TicketCategory>('question');
   const [priority, setPriority] = useState<TicketPriority>('medium');
   const [projectId, setProjectId] = useState(defaultProjectId || '');
+  const [images, setImages] = useState<File[]>([]);
 
   const { data: projects = [] } = useProjects();
   const createTicket = useCreateTicket();
@@ -62,8 +64,34 @@ export function CreateTicketDialog({
       setCategory('question');
       setPriority('medium');
       setProjectId(defaultProjectId || '');
+      setImages([]);
     }
   }, [open, defaultProjectId]);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+
+    const invalidFile = files.find((file) => !file.type.startsWith('image/'));
+    if (invalidFile) {
+      toast.error('Solo podés adjuntar imágenes');
+      event.target.value = '';
+      return;
+    }
+
+    const oversizedFile = files.find((file) => file.size > MAX_TICKET_IMAGE_SIZE);
+    if (oversizedFile) {
+      toast.error('Cada imagen debe pesar menos de 10 MB');
+      event.target.value = '';
+      return;
+    }
+
+    setImages((current) => [...current, ...files]);
+    event.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setImages((current) => current.filter((_, currentIndex) => currentIndex !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +107,8 @@ export function CreateTicketDialog({
         description: description.trim() || undefined,
         category,
         priority,
-        project_id: projectId || undefined,
+        project_id: projectId && projectId !== 'none' ? projectId : undefined,
+        images,
       });
       
       toast.success('Ticket creado exitosamente');
@@ -91,7 +120,7 @@ export function CreateTicketDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuevo Ticket de Soporte</DialogTitle>
         </DialogHeader>
@@ -171,6 +200,41 @@ export function CreateTicketDialog({
               </Select>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="ticket-images">Imágenes</Label>
+            <Input
+              id="ticket-images"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+            />
+            <p className="text-xs text-muted-foreground">
+              Podés subir capturas o fotos, hasta 10 MB cada una.
+            </p>
+            {images.length > 0 && (
+              <div className="space-y-2 rounded-lg border border-border/70 bg-muted/20 p-3">
+                {images.map((image, index) => (
+                  <div key={`${image.name}-${index}`} className="flex items-center justify-between gap-3 text-sm">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{image.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0"
+                      onClick={() => removeImage(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

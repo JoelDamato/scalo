@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Loader2, Bell, UserPlus } from 'lucide-react';
+import { Moon, Sun, Loader2, Bell, UserPlus, CalendarClock, Link2, Unlink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +13,7 @@ import { useCurrentProfile, useUpdateProfile } from '@/hooks/useProfiles';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useGoogleCalendarConnect, useGoogleCalendarDisconnect, useGoogleCalendarStatus } from '@/hooks/useGoogleCalendar';
 import {
   Select,
   SelectContent,
@@ -33,6 +34,9 @@ export default function Settings() {
   const [newUserRole, setNewUserRole] = useState<'admin' | 'dev' | 'client'>('client');
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const pushNotifications = usePushNotifications();
+  const googleCalendarStatus = useGoogleCalendarStatus();
+  const connectGoogleCalendar = useGoogleCalendarConnect();
+  const disconnectGoogleCalendar = useGoogleCalendarDisconnect();
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -101,6 +105,14 @@ export default function Settings() {
     } finally {
       setIsCreatingUser(false);
     }
+  };
+
+  const handleConnectGoogleCalendar = () => {
+    connectGoogleCalendar.mutate(undefined, {
+      onError: (error) => {
+        toast.error(error instanceof Error ? error.message : 'No pude conectar Google Calendar');
+      },
+    });
   };
 
   return (
@@ -185,6 +197,60 @@ export default function Settings() {
                   </div>
                 </button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarClock className="h-4 w-4" />
+              Google Calendar
+            </CardTitle>
+            <CardDescription>
+              Vincula tu calendario para llevar tareas y eventos del proyecto con fecha y hora.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+              {googleCalendarStatus.data?.connected ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">
+                      Conectado como {googleCalendarStatus.data.connection?.google_email || 'tu cuenta de Google'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Calendario: {googleCalendarStatus.data.connection?.calendar_summary || 'Principal'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => disconnectGoogleCalendar.mutate()}
+                    disabled={disconnectGoogleCalendar.isPending}
+                  >
+                    {disconnectGoogleCalendar.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlink className="h-4 w-4" />}
+                    Desconectar Google Calendar
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">Todavía no hay un calendario vinculado</p>
+                    <p className="text-xs text-muted-foreground">
+                      Después podrás mandar tareas y eventos del calendario del proyecto a tu Google Calendar.
+                    </p>
+                  </div>
+                  <Button
+                    className="gap-2"
+                    onClick={handleConnectGoogleCalendar}
+                    disabled={connectGoogleCalendar.isPending}
+                  >
+                    {connectGoogleCalendar.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                    Conectar Google Calendar
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

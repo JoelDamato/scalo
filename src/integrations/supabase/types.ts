@@ -232,6 +232,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          converted_task_id: string | null
           description: string | null
           end_time: string | null
           event_date: string
@@ -244,6 +245,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          converted_task_id?: string | null
           description?: string | null
           end_time?: string | null
           event_date: string
@@ -256,6 +258,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          converted_task_id?: string | null
           description?: string | null
           end_time?: string | null
           event_date?: string
@@ -1070,12 +1073,112 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_connections: {
+        Row: {
+          access_token: string
+          calendar_id: string
+          calendar_summary: string | null
+          created_at: string
+          google_email: string | null
+          id: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          calendar_id?: string
+          calendar_summary?: string | null
+          created_at?: string
+          google_email?: string | null
+          id?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          calendar_id?: string
+          calendar_summary?: string | null
+          created_at?: string
+          google_email?: string | null
+          id?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_calendar_oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_calendar_syncs: {
+        Row: {
+          calendar_id: string
+          created_at: string
+          google_event_id: string
+          id: string
+          source_id: string
+          source_type: string
+          synced_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_id?: string
+          created_at?: string
+          google_event_id: string
+          id?: string
+          source_id: string
+          source_type: string
+          synced_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string
+          created_at?: string
+          google_event_id?: string
+          id?: string
+          source_id?: string
+          source_type?: string
+          synced_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       project_events: {
         Row: {
           created_at: string
           created_by: string
           description: string | null
           event_date: string
+          event_end_time: string | null
           event_time: string | null
           event_type: string
           id: string
@@ -1088,6 +1191,7 @@ export type Database = {
           created_by: string
           description?: string | null
           event_date: string
+          event_end_time?: string | null
           event_time?: string | null
           event_type?: string
           id?: string
@@ -1100,6 +1204,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           event_date?: string
+          event_end_time?: string | null
           event_time?: string | null
           event_type?: string
           id?: string
@@ -1198,6 +1303,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_instructions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_pages: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          page_url: string
+          project_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          page_url: string
+          project_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          page_url?: string
+          project_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_pages_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -1585,6 +1731,10 @@ export type Database = {
           id: string
           is_client_visible: boolean
           project_id: string | null
+          source_ticket_id: string | null
+          scheduled_date: string | null
+          scheduled_end_time: string | null
+          scheduled_time: string | null
           status: string
           title: string
           updated_at: string
@@ -1597,6 +1747,10 @@ export type Database = {
           id?: string
           is_client_visible?: boolean
           project_id?: string | null
+          source_ticket_id?: string | null
+          scheduled_date?: string | null
+          scheduled_end_time?: string | null
+          scheduled_time?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -1609,6 +1763,10 @@ export type Database = {
           id?: string
           is_client_visible?: boolean
           project_id?: string | null
+          source_ticket_id?: string | null
+          scheduled_date?: string | null
+          scheduled_end_time?: string | null
+          scheduled_time?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -1619,6 +1777,60 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_attachments: {
+        Row: {
+          content_type: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          is_internal: boolean
+          message_id: string | null
+          ticket_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          is_internal?: boolean
+          message_id?: string | null
+          ticket_id: string
+          uploaded_by: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          is_internal?: boolean
+          message_id?: string | null
+          ticket_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_attachments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
             referencedColumns: ["id"]
           },
         ]

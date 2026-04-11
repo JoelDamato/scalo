@@ -40,6 +40,9 @@ export function CreateTaskDialog({
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState(defaultProjectId || '');
   const [status, setStatus] = useState<'backlog' | 'in-progress' | 'review' | 'done'>(defaultStatus);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [scheduledEndTime, setScheduledEndTime] = useState('');
 
   const { data: projects = [] } = useProjects();
   const createTask = useCreateTask();
@@ -53,6 +56,9 @@ export function CreateTaskDialog({
       setDescription('');
       setStatus(defaultStatus);
       setProjectId(defaultProjectId || '');
+      setScheduledDate('');
+      setScheduledTime('');
+      setScheduledEndTime('');
     }
   }, [open, defaultStatus, defaultProjectId]);
 
@@ -76,6 +82,9 @@ export function CreateTaskDialog({
         description: description.trim() || undefined,
         project_id: isInternal ? null : projectId,
         status,
+        scheduled_date: scheduledDate || null,
+        scheduled_time: scheduledTime || null,
+        scheduled_end_time: scheduledEndTime || null,
         is_client_visible: !isInternal, // Internal tasks are not client visible
         client_input_required: false,
       });
@@ -84,6 +93,9 @@ export function CreateTaskDialog({
       onOpenChange(false);
       setTitle('');
       setDescription('');
+      setScheduledDate('');
+      setScheduledTime('');
+      setScheduledEndTime('');
       if (!defaultProjectId) setProjectId('');
     } catch (error) {
       toast.error('Error al crear la tarea');
@@ -92,7 +104,7 @@ export function CreateTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isInternal ? 'Nueva Tarea Interna' : 'Nueva Tarea'}
@@ -154,6 +166,30 @@ export function CreateTaskDialog({
                 <SelectItem value="done">Hecho</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Agenda</Label>
+            <div className="grid grid-cols-3 gap-3">
+              <Input
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                aria-label="Fecha de la tarea"
+              />
+              <Input
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                aria-label="Hora de inicio"
+              />
+              <Input
+                type="time"
+                value={scheduledEndTime}
+                onChange={(e) => setScheduledEndTime(e.target.value)}
+                aria-label="Hora de fin"
+              />
+            </div>
           </div>
           
           <DialogFooter>

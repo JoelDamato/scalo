@@ -1,26 +1,31 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ActiveTasksCard } from '@/components/dashboard/ActiveTasksCard';
-import { NeedsInputCard } from '@/components/dashboard/NeedsInputCard';
 import { ClientDashboard } from '@/components/dashboard/ClientDashboard';
-import { Project, useProjects, useTasks, useActivities, useProfile } from '@/hooks/useData';
+import { TaskActivityChart } from '@/components/dashboard/TaskActivityChart';
+import { Project, useProjects, useTasks, useProfile } from '@/hooks/useData';
+import { useTasksAssignees } from '@/hooks/useTaskAssignees';
+import { useProfiles } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FolderKanban, CheckSquare, AlertCircle, LifeBuoy, Plus, Upload, ArrowRight, CircleDot, Users } from 'lucide-react';
+import { FolderKanban, CheckSquare, AlertCircle, LifeBuoy, Plus, Upload, ArrowRight, CircleDot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
-  const { data: activities = [], isLoading: activitiesLoading } = useActivities();
+  const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+  const { data: taskAssignees = [], isLoading: taskAssigneesLoading } = useTasksAssignees(taskIds);
+  const { data: profiles = [] } = useProfiles();
   const navigate = useNavigate();
 
-  const isLoading = projectsLoading || tasksLoading || activitiesLoading;
+  const isLoading = projectsLoading || tasksLoading || taskAssigneesLoading;
   const userName = profile?.name?.split(' ')[0] || 'there';
 
   // Contextual greeting
@@ -71,7 +76,8 @@ export default function Dashboard() {
           userName={userName}
           projects={projects}
           tasks={tasks}
-          activities={activities}
+          assignees={taskAssignees}
+          profiles={profiles}
         />
       </AppLayout>
     );
@@ -137,26 +143,7 @@ export default function Dashboard() {
 
         {/* Main content grid */}
         <div className="grid gap-5 lg:grid-cols-2">
-          {/* Recent Activity with View All */}
-          <Card className="animate-fade-in border-border/80 hover:border-border transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-violet/10">
-                  <Users className="h-5 w-5 text-accent-violet" />
-                </div>
-                <div>
-                  <CardTitle className="text-base font-semibold">Actividad reciente</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Últimas actualizaciones de proyectos</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/activity')} className="text-muted-foreground hover:text-foreground">
-                Ver todo
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <RecentActivityInline activities={activities} />
-            </CardContent>
-          </Card>
+          <TaskActivityChart tasks={tasks} assignees={taskAssignees} profiles={profiles} />
 
           {/* Active support projects */}
           <Card className="animate-fade-in border-border/80 hover:border-border transition-colors" style={{ animationDelay: '50ms' }}>
@@ -179,42 +166,11 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Needs Input */}
-          <NeedsInputCard tasks={tasks} />
-
           {/* Active Work */}
           <ActiveTasksCard tasks={tasks} />
         </div>
       </div>
     </AppLayout>
-  );
-}
-
-// Inline activity list component
-function RecentActivityInline({ activities }: { activities: any[] }) {
-  const recentActivity = activities.slice(0, 6);
-  
-  if (recentActivity.length === 0) {
-    return <p className="text-sm text-muted-foreground py-4 text-center">Sin actividad reciente</p>;
-  }
-
-  return (
-    <div className="space-y-0 divide-y divide-border">
-      {recentActivity.map((item) => (
-        <div key={item.id} className="flex items-center gap-4 py-3">
-          <div className="text-xs text-muted-foreground w-16 shrink-0">
-            {new Date(item.created_at).toLocaleTimeString('es-AR', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: false 
-            })}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-foreground truncate">{item.message}</p>
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }
 

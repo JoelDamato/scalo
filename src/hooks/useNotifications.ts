@@ -192,7 +192,7 @@ export function useMentionNotifications() {
           type: 'mention',
           title: `Te mencionaron en ${context.contextType === 'comment' ? 'un comentario' : 'una tarea'}`,
           message: `${user?.email?.split('@')[0] || 'Alguien'} te mencionó en "${context.contextName}"`,
-          link: context.taskId ? `/tasks?task=${context.taskId}` : undefined,
+          link: context.taskId ? `/my-tasks?task=${context.taskId}` : undefined,
           task_id: context.taskId,
           project_id: context.projectId
         });
@@ -221,7 +221,7 @@ export function useAssignmentNotifications() {
       type: 'assignment',
       title: 'Te asignaron una tarea',
       message: `Te asignaron la tarea "${taskTitle}"`,
-      link: `/tasks?task=${taskId}`,
+      link: `/my-tasks?task=${taskId}`,
       task_id: taskId,
       project_id: projectId
     });

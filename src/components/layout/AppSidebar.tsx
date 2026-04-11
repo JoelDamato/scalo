@@ -1,8 +1,7 @@
 import { 
   LayoutDashboard, 
   FolderKanban, 
-  CheckSquare, 
-  Activity, 
+  ListTodo,
   Settings, 
   LogOut,
   Search,
@@ -39,19 +38,18 @@ import { useState } from 'react';
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Proyectos', url: '/projects', icon: FolderKanban },
-  { title: 'Tareas', url: '/tasks', icon: CheckSquare },
+  { title: 'Mis tareas', url: '/my-tasks', icon: ListTodo },
   { title: 'Soporte', url: '/support', icon: Ticket },
   { title: 'Finanzas', url: '/finance', icon: Wallet },
   { title: 'Reportes', url: '/reports', icon: FileText },
   { title: 'Recursos', url: '/resources', icon: BookOpen },
-  { title: 'Actividad', url: '/activity', icon: Activity },
 ];
 
 const clientNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Proyectos', url: '/projects', icon: FolderKanban },
+  { title: 'Mis tareas', url: '/my-tasks', icon: ListTodo },
   { title: 'Mis Tickets', url: '/support', icon: Ticket },
-  { title: 'Actividad', url: '/activity', icon: Activity },
 ];
 
 export function AppSidebar() {

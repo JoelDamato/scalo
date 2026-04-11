@@ -21,6 +21,10 @@ export interface Task {
   status: 'backlog' | 'in-progress' | 'review' | 'done';
   project_id: string | null;
   assignee_id: string | null;
+  source_ticket_id: string | null;
+  scheduled_date: string | null;
+  scheduled_time: string | null;
+  scheduled_end_time: string | null;
   is_client_visible: boolean;
   client_input_required: boolean;
   created_at: string;
@@ -201,7 +205,7 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string; is_client_visible?: boolean; client_input_required?: boolean }) => {
+    mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean }) => {
       const { data, error } = await supabase
         .from('tasks')
         .insert(task)
@@ -221,7 +225,7 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Pick<Task, 'is_client_visible' | 'client_input_required' | 'title' | 'description'>> }) => {
+    mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Pick<Task, 'is_client_visible' | 'client_input_required' | 'title' | 'description' | 'source_ticket_id' | 'scheduled_date' | 'scheduled_time' | 'scheduled_end_time'>> }) => {
       const { data, error } = await supabase
         .from('tasks')
         .update(updates)

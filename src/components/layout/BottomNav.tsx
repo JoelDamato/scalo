@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const adminItems = [
   { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Proyectos', icon: FolderKanban, path: '/projects' },
-  { label: 'Tareas', icon: CheckSquare, path: '/tasks' },
+  { label: 'Mis tareas', icon: CheckSquare, path: '/my-tasks' },
   { label: 'Soporte', icon: Ticket, path: '/support' },
 ];
 

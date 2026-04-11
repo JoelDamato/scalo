@@ -9,6 +9,7 @@ export interface ProjectEvent {
   description: string | null;
   event_date: string;
   event_time: string | null;
+  event_end_time: string | null;
   event_type: string;
   created_by: string;
   created_at: string;
@@ -37,7 +38,7 @@ export function useCreateProjectEvent() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (event: { project_id: string; title: string; description?: string; event_date: string; event_time?: string; event_type?: string }) => {
+    mutationFn: async (event: { project_id: string; title: string; description?: string; event_date: string; event_time?: string; event_end_time?: string; event_type?: string }) => {
       const { data, error } = await supabase
         .from('project_events' as any)
         .insert({ ...event, created_by: user?.id })
