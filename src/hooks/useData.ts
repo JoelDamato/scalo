@@ -203,12 +203,18 @@ export function useUpdateTaskStatus() {
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
+  const { user, role } = useAuth();
   
   return useMutation({
     mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean }) => {
+      const taskToCreate = {
+        ...task,
+        assignee_id: role !== 'admin' && user?.id && !task.assignee_id ? user.id : task.assignee_id,
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert(task)
+        .insert(taskToCreate)
         .select()
         .single();
       
@@ -217,6 +223,7 @@ export function useCreateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
     }
   });
 }
