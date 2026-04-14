@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatFinanceCurrency } from '@/lib/finance-currency';
+import { MonthlyFinanceHistory } from './MonthlyFinanceHistory';
 
 export function FinanceOverview() {
   const stats = useFinanceStats();
@@ -144,6 +145,8 @@ export function FinanceOverview() {
           </CardContent>
         </Card>
       </div>
+
+      <MonthlyFinanceHistory />
 
       {/* Recent Activity */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">

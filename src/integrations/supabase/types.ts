@@ -589,6 +589,39 @@ export type Database = {
           },
         ]
       }
+      finance_monthly_overrides: {
+        Row: {
+          created_at: string
+          expenses_ars: number | null
+          id: string
+          month: string
+          notes: string | null
+          revenue_ars: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expenses_ars?: number | null
+          id?: string
+          month: string
+          notes?: string | null
+          revenue_ars?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expenses_ars?: number | null
+          id?: string
+          month?: string
+          notes?: string | null
+          revenue_ars?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       initiative_briefs: {
         Row: {
           business_model: string | null

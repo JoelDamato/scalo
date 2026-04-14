@@ -1,5 +1,9 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getExpenseAmountArs, useExpenses } from '@/hooks/useExpenses';
+import { useAuth } from '@/hooks/useAuth';
 import {
   formatFinanceCurrency,
   getResolvedAmountArs,
@@ -64,6 +68,43 @@ export interface ArcaInvoice {
   error_message: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface FinanceMonthlyOverride {
+  id: string;
+  month: string;
+  revenue_ars: number | null;
+  expenses_ars: number | null;
+  notes: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FinanceMonthlySummary {
+  month: string;
+  calculatedRevenueArs: number;
+  calculatedExpensesArs: number;
+  revenueArs: number;
+  expensesArs: number;
+  profitArs: number;
+  jotaArs: number;
+  tomasArs: number;
+  isCurrentMonth: boolean;
+  isEdited: boolean;
+  override: FinanceMonthlyOverride | null;
+}
+
+export function getFinanceRecordAmountArs(record: FinanceRecord) {
+  return Number(record.resolved_amount_ars ?? record.amount_ars ?? record.amount);
+}
+
+export function getFinanceRecordAmountUsd(record: FinanceRecord) {
+  return normalizeFinanceCurrency(record.currency) === 'USD' ? Number(record.amount) : 0;
+}
+
+export function getFinanceRecordMonthKey(record: FinanceRecord) {
+  return (record.invoice_date || record.created_at).slice(0, 7);
 }
 
 // Finance Records Hooks
@@ -313,48 +354,185 @@ export function useCreateArcaInvoice() {
   });
 }
 
+export function useFinanceMonthlyOverrides() {
+  return useQuery({
+    queryKey: ['finance-monthly-overrides'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('finance_monthly_overrides')
+        .select('*')
+        .order('month', { ascending: false });
+
+      if (error) throw error;
+      return (data as FinanceMonthlyOverride[]).map((override) => ({
+        ...override,
+        revenue_ars: override.revenue_ars === null ? null : Number(override.revenue_ars),
+        expenses_ars: override.expenses_ars === null ? null : Number(override.expenses_ars),
+      }));
+    },
+  });
+}
+
+export function useUpsertFinanceMonthlyOverride() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (override: {
+      month: string;
+      revenue_ars: number | null;
+      expenses_ars: number | null;
+      notes?: string | null;
+    }) => {
+      if (!user?.id) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase
+        .from('finance_monthly_overrides')
+        .upsert(
+          {
+            ...override,
+            notes: override.notes?.trim() || null,
+            updated_by: user.id,
+          },
+          { onConflict: 'month' },
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as FinanceMonthlyOverride;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance-monthly-overrides'] });
+      toast.success('Historial mensual actualizado');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar el historial');
+    },
+  });
+}
+
+export function useDeleteFinanceMonthlyOverride() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (month: string) => {
+      const { error } = await supabase
+        .from('finance_monthly_overrides')
+        .delete()
+        .eq('month', month);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance-monthly-overrides'] });
+      toast.success('Mes restaurado al cálculo automático');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'No se pudo restaurar el mes');
+    },
+  });
+}
+
+export function useFinanceMonthlyHistory() {
+  const financeRecordsQuery = useFinanceRecords();
+  const expensesQuery = useExpenses();
+  const overridesQuery = useFinanceMonthlyOverrides();
+
+  const summaries = useMemo(() => {
+    const records = financeRecordsQuery.data ?? [];
+    const expenses = expensesQuery.data ?? [];
+    const overrides = overridesQuery.data ?? [];
+    const currentMonth = getTodayInBuenosAires().slice(0, 7);
+    const revenueByMonth = new Map<string, number>();
+    const expensesByMonth = new Map<string, number>();
+    const overridesByMonth = new Map(overrides.map((override) => [override.month, override]));
+    const months = new Set<string>([currentMonth]);
+
+    records
+      .filter((record) => record.payment_status === 'paid')
+      .forEach((record) => {
+        const month = getFinanceRecordMonthKey(record);
+        months.add(month);
+        revenueByMonth.set(month, (revenueByMonth.get(month) ?? 0) + getFinanceRecordAmountArs(record));
+      });
+
+    expenses.forEach((expense) => {
+      const month = expense.expense_date.slice(0, 7);
+      months.add(month);
+      expensesByMonth.set(month, (expensesByMonth.get(month) ?? 0) + getExpenseAmountArs(expense));
+    });
+
+    overrides.forEach((override) => months.add(override.month));
+
+    return Array.from(months)
+      .sort((a, b) => b.localeCompare(a))
+      .map((month) => {
+        const calculatedRevenueArs = revenueByMonth.get(month) ?? 0;
+        const calculatedExpensesArs = expensesByMonth.get(month) ?? 0;
+        const override = overridesByMonth.get(month) ?? null;
+        const revenueArs = override?.revenue_ars ?? calculatedRevenueArs;
+        const expensesArs = override?.expenses_ars ?? calculatedExpensesArs;
+        const profitArs = revenueArs - expensesArs;
+
+        return {
+          month,
+          calculatedRevenueArs,
+          calculatedExpensesArs,
+          revenueArs,
+          expensesArs,
+          profitArs,
+          jotaArs: profitArs / 2,
+          tomasArs: profitArs / 2,
+          isCurrentMonth: month === currentMonth,
+          isEdited: Boolean(override),
+          override,
+        };
+      });
+  }, [expensesQuery.data, financeRecordsQuery.data, overridesQuery.data]);
+
+  return {
+    data: summaries,
+    chartData: [...summaries].reverse(),
+    isLoading: financeRecordsQuery.isLoading || expensesQuery.isLoading || overridesQuery.isLoading,
+  };
+}
+
 // Stats
 export function useFinanceStats() {
   const { data: records = [] } = useFinanceRecords();
-
-  const getRecordAmountArs = (record: FinanceRecord) =>
-    Number(record.resolved_amount_ars ?? record.amount_ars ?? record.amount);
-
-  const getRecordAmountUsd = (record: FinanceRecord) =>
-    normalizeFinanceCurrency(record.currency) === 'USD' ? Number(record.amount) : 0;
-
-  const getRecordMonthKey = (record: FinanceRecord) =>
-    (record.invoice_date || record.created_at).slice(0, 7);
   
-  const totalRevenue = records.reduce((sum, r) => sum + getRecordAmountArs(r), 0);
-  const totalRevenueUsd = records.reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
+  const totalRevenue = records.reduce((sum, r) => sum + getFinanceRecordAmountArs(r), 0);
+  const totalRevenueUsd = records.reduce((sum, r) => sum + getFinanceRecordAmountUsd(r), 0);
   const pendingRevenue = records
     .filter(r => r.payment_status === 'pending')
-    .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+    .reduce((sum, r) => sum + getFinanceRecordAmountArs(r), 0);
   const pendingRevenueUsd = records
     .filter(r => r.payment_status === 'pending')
-    .reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
+    .reduce((sum, r) => sum + getFinanceRecordAmountUsd(r), 0);
   const paidRevenue = records
     .filter(r => r.payment_status === 'paid')
-    .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+    .reduce((sum, r) => sum + getFinanceRecordAmountArs(r), 0);
   const paidRevenueUsd = records
     .filter(r => r.payment_status === 'paid')
-    .reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
+    .reduce((sum, r) => sum + getFinanceRecordAmountUsd(r), 0);
   const partialRevenue = records
     .filter(r => r.payment_status === 'partial')
-    .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+    .reduce((sum, r) => sum + getFinanceRecordAmountArs(r), 0);
   const partialRevenueUsd = records
     .filter(r => r.payment_status === 'partial')
-    .reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
+    .reduce((sum, r) => sum + getFinanceRecordAmountUsd(r), 0);
   
   // Monthly breakdown
   const currentMonth = getTodayInBuenosAires().slice(0, 7);
   const monthlyRevenue = records
-    .filter(r => getRecordMonthKey(r) === currentMonth)
-    .reduce((sum, r) => sum + getRecordAmountArs(r), 0);
+    .filter(r => getFinanceRecordMonthKey(r) === currentMonth)
+    .reduce((sum, r) => sum + getFinanceRecordAmountArs(r), 0);
   const monthlyRevenueUsd = records
-    .filter(r => getRecordMonthKey(r) === currentMonth)
-    .reduce((sum, r) => sum + getRecordAmountUsd(r), 0);
+    .filter(r => getFinanceRecordMonthKey(r) === currentMonth)
+    .reduce((sum, r) => sum + getFinanceRecordAmountUsd(r), 0);
   
   return {
     totalRevenue,
