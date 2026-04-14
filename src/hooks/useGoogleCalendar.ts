@@ -29,6 +29,8 @@ export interface GoogleCalendarSyncRow {
 
 const GOOGLE_CALENDAR_CONNECT_ERROR =
   'No pude iniciar la conexión con Google Calendar. Revisá que la sesión siga activa e intentá de nuevo.';
+const GOOGLE_CALENDAR_SESSION_ERROR =
+  'Tu sesión está vencida. Cerrá sesión, volvé a entrar y probá conectar Google Calendar otra vez.';
 
 async function getFunctionErrorMessage(error: unknown, fallback: string) {
   if (!(error instanceof Error)) return fallback;
@@ -63,10 +65,41 @@ async function getCurrentAccessToken() {
   } = await supabase.auth.getSession();
 
   if (error || !session?.access_token) {
-    throw new Error('Tu sesión expiró. Cerrá sesión, volvé a entrar y probá conectar Google Calendar otra vez.');
+    throw new Error(GOOGLE_CALENDAR_SESSION_ERROR);
   }
 
-  return session.access_token;
+  const expiresSoon = session.expires_at
+    ? session.expires_at * 1000 - Date.now() < 60_000
+    : false;
+
+  const activeSession = expiresSoon
+    ? (await supabase.auth.refreshSession()).data.session
+    : session;
+
+  if (!activeSession?.access_token) {
+    throw new Error(GOOGLE_CALENDAR_SESSION_ERROR);
+  }
+
+  const { error: userError } = await supabase.auth.getUser(activeSession.access_token);
+  if (!userError) {
+    return activeSession.access_token;
+  }
+
+  const {
+    data: { session: refreshedSession },
+    error: refreshError,
+  } = await supabase.auth.refreshSession();
+
+  if (refreshError || !refreshedSession?.access_token) {
+    throw new Error(GOOGLE_CALENDAR_SESSION_ERROR);
+  }
+
+  const { error: refreshedUserError } = await supabase.auth.getUser(refreshedSession.access_token);
+  if (refreshedUserError) {
+    throw new Error(GOOGLE_CALENDAR_SESSION_ERROR);
+  }
+
+  return refreshedSession.access_token;
 }
 
 async function invokeGoogleCalendarFunction<T>(
