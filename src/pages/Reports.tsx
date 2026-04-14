@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { FileText, Loader2, Lock, PlusCircle } from 'lucide-react';
+import { FileText, Loader2, Lock, PlusCircle, Send } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,13 +20,15 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useSearchParams } from 'react-router-dom';
-import { useCurrentProfile, useProfiles } from '@/hooks/useProfiles';
-import { useCreateReport, useReports } from '@/hooks/useReports';
+import { useAuth } from '@/hooks/useAuth';
+import { useCurrentProfile, useProfiles, type Profile } from '@/hooks/useProfiles';
+import { useCreateReport, useCreateReportComment, useReportComments, useReports } from '@/hooks/useReports';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function Reports() {
   useDocumentTitle('Reportes');
 
+  const { role } = useAuth();
   const { data: reports = [], isLoading } = useReports();
   const { data: profiles = [] } = useProfiles();
   const { data: currentProfile } = useCurrentProfile();
@@ -35,6 +38,7 @@ export default function Reports() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const highlightedReportId = searchParams.get('report');
+  const canCommentReports = role === 'admin';
 
   const profileByUserId = useMemo(
     () => new Map(profiles.map((profile) => [profile.user_id, profile])),
@@ -206,6 +210,11 @@ export default function Reports() {
                       <div className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
                         {report.content}
                       </div>
+                      <ReportComments
+                        reportId={report.id}
+                        profiles={profiles}
+                        canComment={canCommentReports}
+                      />
                     </AccordionContent>
                   </AccordionItem>
                 );
@@ -216,4 +225,126 @@ export default function Reports() {
       </div>
     </AppLayout>
   );
+}
+
+function ReportComments({
+  reportId,
+  profiles,
+  canComment,
+}: {
+  reportId: string;
+  profiles: Profile[];
+  canComment: boolean;
+}) {
+  const { data: comments = [], isLoading } = useReportComments(reportId);
+  const createReportComment = useCreateReportComment();
+  const [comment, setComment] = useState('');
+
+  const profileByUserId = useMemo(
+    () => new Map(profiles.map((profile) => [profile.user_id, profile])),
+    [profiles],
+  );
+
+  const handleSubmit = async () => {
+    if (!comment.trim()) {
+      return;
+    }
+
+    await createReportComment.mutateAsync({
+      reportId,
+      content: comment,
+    });
+
+    setComment('');
+  };
+
+  return (
+    <div className="mt-6 border-t border-border/60 pt-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h4 className="text-sm font-semibold">Comentarios</h4>
+        <Badge variant="secondary">{comments.length}</Badge>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2].map((item) => (
+            <div key={item} className="h-14 animate-pulse rounded-lg bg-muted" />
+          ))}
+        </div>
+      ) : comments.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
+          Todavía no hay comentarios en este reporte.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {comments.map((item) => {
+            const author = profileByUserId.get(item.author_id);
+
+            return (
+              <div key={item.id} className="flex gap-3 rounded-lg bg-muted/20 p-3">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={author?.avatar_url || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {getInitials(author?.name || author?.email)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium">{author?.name || author?.email || 'Admin'}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: es })}
+                    </span>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-foreground/90">
+                    {item.content}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {canComment ? (
+        <div className="mt-4 space-y-2">
+          <Textarea
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Agregar comentario para el creador del reporte..."
+            className="min-h-24 resize-y"
+          />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={!comment.trim() || createReportComment.isPending}
+            >
+              {createReportComment.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              Comentar
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-4 rounded-lg bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          Solo los usuarios con rol admin pueden comentar reportes.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function getInitials(value?: string | null) {
+  if (!value) return 'AD';
+
+  return value
+    .split(/[ @._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 }

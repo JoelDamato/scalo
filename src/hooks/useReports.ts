@@ -12,6 +12,14 @@ export interface Report {
   created_at: string;
 }
 
+export interface ReportComment {
+  id: string;
+  report_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+}
+
 export function useReports() {
   return useQuery({
     queryKey: ['reports'],
@@ -25,6 +33,23 @@ export function useReports() {
       if (error) throw error;
       return data as Report[];
     },
+  });
+}
+
+export function useReportComments(reportId: string) {
+  return useQuery({
+    queryKey: ['report-comments', reportId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('report_comments')
+        .select('*')
+        .eq('report_id', reportId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data as ReportComment[];
+    },
+    enabled: !!reportId,
   });
 }
 
@@ -57,6 +82,39 @@ export function useCreateReport() {
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'No se pudo cargar el reporte');
+    },
+  });
+}
+
+export function useCreateReportComment() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ reportId, content }: { reportId: string; content: string }) => {
+      if (!user?.id) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase
+        .from('report_comments')
+        .insert({
+          report_id: reportId,
+          content: content.trim(),
+          author_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as ReportComment;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['report-comments', variables.reportId] });
+      toast.success('Comentario publicado');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'No se pudo publicar el comentario');
     },
   });
 }

@@ -39,6 +39,8 @@ export default function Notifications() {
         return '📋';
       case 'report_created':
         return '📄';
+      case 'report_comment':
+        return '💬';
       default:
         return '🔔';
     }

@@ -44,6 +44,8 @@ export function NotificationBell() {
         return '📋';
       case 'report_created':
         return '📄';
+      case 'report_comment':
+        return '💬';
       default:
         return '🔔';
     }
