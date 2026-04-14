@@ -22,8 +22,8 @@ export function FinanceOverview() {
     );
   }
 
-  const profitArs = stats.totalRevenue - expenseStats.totalExpenses;
-  const profitUsd = stats.totalRevenueUsd - expenseStats.totalExpensesUsd;
+  const profitArs = stats.paidRevenue - expenseStats.totalExpenses;
+  const profitUsd = stats.paidRevenueUsd - expenseStats.totalExpensesUsd;
   const jotaArs = profitArs / 2;
   const jotaUsd = profitUsd / 2;
 
@@ -48,7 +48,7 @@ export function FinanceOverview() {
       title: 'Ganancia',
       value: formatFinanceCurrency(profitArs, 'ARS'),
       icon: TrendingUp,
-      description: `${formatFinanceCurrency(profitUsd, 'USD')} neto en USD · ingresos menos gastos`,
+      description: `${formatFinanceCurrency(profitUsd, 'USD')} neto en USD · cobrado menos gastos`,
       color: profitArs >= 0 ? 'text-blue-500' : 'text-rose-500',
       bg: profitArs >= 0 ? 'bg-blue-500/10' : 'bg-rose-500/10',
     },
@@ -75,7 +75,7 @@ export function FinanceOverview() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        Los totales principales se muestran en ARS, convirtiendo los USD al dólar blue venta. El USD queda como referencia debajo.
+        Los totales principales se muestran en ARS, convirtiendo los USD al dólar blue venta. La ganancia usa solo ingresos pagados; los pendientes no entran en el reparto.
       </div>
 
       {/* Stats Grid */}
