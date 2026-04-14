@@ -18,29 +18,29 @@ export default function Finance() {
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="h-auto w-full flex-wrap justify-start bg-card border border-border/50 p-1 rounded-xl">
-            <TabsTrigger 
+            <TabsTrigger
               value="overview" 
               className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               Resumen
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="records"
               className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               Ingresos
             </TabsTrigger>
             <TabsTrigger
+              value="expenses"
+              className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Gastos
+            </TabsTrigger>
+            <TabsTrigger
               value="history"
               className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               Historial
-            </TabsTrigger>
-            <TabsTrigger 
-              value="expenses"
-              className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              💸 Gastos
             </TabsTrigger>
           </TabsList>
 
@@ -52,13 +52,13 @@ export default function Finance() {
             <FinanceRecordsList />
           </TabsContent>
 
-          <TabsContent value="history" className="mt-6">
-            <MonthlyFinanceHistory />
-          </TabsContent>
-
           <TabsContent value="expenses" className="mt-6 space-y-6">
             <ExpensesSummary />
             <ExpensesList />
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-6">
+            <MonthlyFinanceHistory />
           </TabsContent>
 
           {/* ARCA - comentado para más adelante
