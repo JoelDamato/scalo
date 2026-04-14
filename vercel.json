@@ -3,6 +3,19 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.scalo.tech"
+        }
+      ],
+      "destination": "https://scalo.tech/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
