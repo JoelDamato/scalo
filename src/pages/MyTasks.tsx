@@ -178,6 +178,7 @@ export default function MyTasks() {
         onOpenChange={setCreateDialogOpen}
         defaultProjectId={projectFilter !== 'all' && projectFilter !== 'internal' ? projectFilter : undefined}
         mode={projectFilter === 'internal' ? 'internal' : 'project'}
+        assignToCurrentUser
       />
     </AppLayout>
   );

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useCreateTask } from '@/hooks/useData';
 import { useProjects } from '@/hooks/useData';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface CreateTaskDialogProps {
@@ -27,6 +28,7 @@ interface CreateTaskDialogProps {
   defaultStatus?: 'backlog' | 'in-progress' | 'review' | 'done';
   defaultProjectId?: string;
   mode?: 'project' | 'internal';
+  assignToCurrentUser?: boolean;
 }
 
 export function CreateTaskDialog({ 
@@ -34,7 +36,8 @@ export function CreateTaskDialog({
   onOpenChange, 
   defaultStatus = 'backlog',
   defaultProjectId,
-  mode = 'project'
+  mode = 'project',
+  assignToCurrentUser = false
 }: CreateTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -46,6 +49,7 @@ export function CreateTaskDialog({
 
   const { data: projects = [] } = useProjects();
   const createTask = useCreateTask();
+  const { user } = useAuth();
 
   const isInternal = mode === 'internal';
 
@@ -87,6 +91,7 @@ export function CreateTaskDialog({
         scheduled_end_time: scheduledEndTime || null,
         is_client_visible: !isInternal, // Internal tasks are not client visible
         client_input_required: false,
+        assignee_id: assignToCurrentUser ? user?.id : undefined,
       });
       
       toast.success('Tarea creada');
