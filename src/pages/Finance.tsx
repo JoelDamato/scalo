@@ -5,6 +5,7 @@ import { FinanceOverview } from '@/components/finance/FinanceOverview';
 import { FinanceRecordsList } from '@/components/finance/FinanceRecordsList';
 import { ExpensesList } from '@/components/finance/ExpensesList';
 import { ExpensesSummary } from '@/components/finance/ExpensesSummary';
+import { MonthlyFinanceHistory } from '@/components/finance/MonthlyFinanceHistory';
 // ARCA - comentado para más adelante
 // import { ArcaSettings } from '@/components/finance/ArcaSettings';
 // import { ArcaInvoicesList } from '@/components/finance/ArcaInvoicesList';
@@ -29,6 +30,12 @@ export default function Finance() {
             >
               Ingresos
             </TabsTrigger>
+            <TabsTrigger
+              value="history"
+              className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Historial
+            </TabsTrigger>
             <TabsTrigger 
               value="expenses"
               className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -43,6 +50,10 @@ export default function Finance() {
 
           <TabsContent value="records" className="mt-6">
             <FinanceRecordsList />
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-6">
+            <MonthlyFinanceHistory />
           </TabsContent>
 
           <TabsContent value="expenses" className="mt-6 space-y-6">
