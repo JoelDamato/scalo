@@ -169,6 +169,7 @@ export function useMentionNotifications() {
     context: {
       taskId?: string;
       projectId?: string;
+      link?: string;
       contextType: 'comment' | 'task' | 'initiative';
       contextName: string;
     }
@@ -176,6 +177,7 @@ export function useMentionNotifications() {
     // Find all @mentions in text
     const mentionRegex = /@(\w+(?:\s+\w+)?)/g;
     const mentions = text.match(mentionRegex) || [];
+    const notifiedUserIds = new Set<string>();
     
     for (const mention of mentions) {
       const mentionedName = mention.slice(1).toLowerCase();
@@ -186,13 +188,14 @@ export function useMentionNotifications() {
         mentionedName.includes(p.name.toLowerCase().split(' ')[0])
       );
       
-      if (mentionedProfile && mentionedProfile.user_id !== user?.id) {
+      if (mentionedProfile && mentionedProfile.user_id !== user?.id && !notifiedUserIds.has(mentionedProfile.user_id)) {
+        notifiedUserIds.add(mentionedProfile.user_id);
         await createNotification.mutateAsync({
           user_id: mentionedProfile.user_id,
           type: 'mention',
           title: `Te mencionaron en ${context.contextType === 'comment' ? 'un comentario' : 'una tarea'}`,
           message: `${user?.email?.split('@')[0] || 'Alguien'} te mencionó en "${context.contextName}"`,
-          link: context.taskId ? `/my-tasks?task=${context.taskId}` : undefined,
+          link: context.link ?? (context.taskId ? `/my-tasks?task=${context.taskId}` : undefined),
           task_id: context.taskId,
           project_id: context.projectId
         });

@@ -20,7 +20,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useSearchParams } from 'react-router-dom';
+import { MentionInput } from '@/components/mentions/MentionInput';
 import { useAuth } from '@/hooks/useAuth';
+import { useMentionNotifications } from '@/hooks/useNotifications';
 import { useCurrentProfile, useProfiles, type Profile } from '@/hooks/useProfiles';
 import { useCreateReport, useCreateReportComment, useReportComments, useReports } from '@/hooks/useReports';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -212,6 +214,7 @@ export default function Reports() {
                       </div>
                       <ReportComments
                         reportId={report.id}
+                        reportTitle={report.title}
                         profiles={profiles}
                         canComment={canCommentReports}
                       />
@@ -229,15 +232,18 @@ export default function Reports() {
 
 function ReportComments({
   reportId,
+  reportTitle,
   profiles,
   canComment,
 }: {
   reportId: string;
+  reportTitle: string;
   profiles: Profile[];
   canComment: boolean;
 }) {
   const { data: comments = [], isLoading } = useReportComments(reportId);
   const createReportComment = useCreateReportComment();
+  const { sendMentionNotifications } = useMentionNotifications();
   const [comment, setComment] = useState('');
 
   const profileByUserId = useMemo(
@@ -254,6 +260,16 @@ function ReportComments({
       reportId,
       content: comment,
     });
+
+    await sendMentionNotifications(
+      comment,
+      profiles.map((profile) => ({ user_id: profile.user_id, name: profile.name })),
+      {
+        contextType: 'comment',
+        contextName: reportTitle,
+        link: `/reports?report=${reportId}`,
+      },
+    );
 
     setComment('');
   };
@@ -307,10 +323,11 @@ function ReportComments({
 
       {canComment ? (
         <div className="mt-4 space-y-2">
-          <Textarea
+          <MentionInput
             value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder="Agregar comentario para el creador del reporte..."
+            onChange={setComment}
+            onSubmit={handleSubmit}
+            placeholder="Agregar comentario... Usá @ para mencionar"
             className="min-h-24 resize-y"
           />
           <div className="flex justify-end">
