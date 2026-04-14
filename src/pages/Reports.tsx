@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useSearchParams } from 'react-router-dom';
 import { useCurrentProfile, useProfiles } from '@/hooks/useProfiles';
 import { useCreateReport, useReports } from '@/hooks/useReports';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -32,6 +33,8 @@ export default function Reports() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const highlightedReportId = searchParams.get('report');
 
   const profileByUserId = useMemo(
     () => new Map(profiles.map((profile) => [profile.user_id, profile])),
@@ -169,7 +172,11 @@ export default function Reports() {
               </CardContent>
             </Card>
           ) : (
-            <Accordion type="multiple" className="space-y-3">
+            <Accordion
+              type="multiple"
+              defaultValue={highlightedReportId ? [highlightedReportId] : undefined}
+              className="space-y-3"
+            >
               {reports.map((report) => {
                 const author = profileByUserId.get(report.created_by);
 

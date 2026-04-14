@@ -42,6 +42,8 @@ export function NotificationBell() {
         return '💬';
       case 'assignment':
         return '📋';
+      case 'report_created':
+        return '📄';
       default:
         return '🔔';
     }

@@ -27,6 +27,9 @@ export interface GoogleCalendarSyncRow {
   updated_at: string;
 }
 
+const GOOGLE_CALENDAR_CONNECT_ERROR =
+  'No pude iniciar la conexión con Google Calendar. Revisá que la sesión siga activa e intentá de nuevo.';
+
 async function getFunctionErrorMessage(error: unknown, fallback: string) {
   if (!(error instanceof Error)) return fallback;
 
@@ -35,12 +38,56 @@ async function getFunctionErrorMessage(error: unknown, fallback: string) {
     try {
       const body = await context.clone().json();
       if (typeof body?.error === 'string') return body.error;
+      if (typeof body?.message === 'string') return body.message;
     } catch {
-      // Keep the original Supabase error message below.
+      try {
+        const text = await context.clone().text();
+        if (text) return text;
+      } catch {
+        // Keep the original Supabase error message below.
+      }
     }
   }
 
+  if (error.message === 'Edge Function returned a non-2xx status code') {
+    return fallback;
+  }
+
   return error.message || fallback;
+}
+
+async function getCurrentAccessToken() {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error || !session?.access_token) {
+    throw new Error('Tu sesión expiró. Cerrá sesión, volvé a entrar y probá conectar Google Calendar otra vez.');
+  }
+
+  return session.access_token;
+}
+
+async function invokeGoogleCalendarFunction<T>(
+  functionName: string,
+  options: Parameters<typeof supabase.functions.invoke>[1] = {},
+  fallback = GOOGLE_CALENDAR_CONNECT_ERROR,
+) {
+  const accessToken = await getCurrentAccessToken();
+  const { data, error } = await supabase.functions.invoke(functionName, {
+    ...options,
+    headers: {
+      ...(options?.headers || {}),
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    throw new Error(await getFunctionErrorMessage(error, fallback));
+  }
+
+  return data as T;
 }
 
 export function useGoogleCalendarStatus() {
@@ -49,9 +96,7 @@ export function useGoogleCalendarStatus() {
   return useQuery({
     queryKey: ['google-calendar-status', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('google-calendar-status');
-      if (error) throw error;
-      return data as GoogleCalendarConnectionStatus;
+      return invokeGoogleCalendarFunction<GoogleCalendarConnectionStatus>('google-calendar-status');
     },
     enabled: !!user,
     retry: false,
@@ -92,7 +137,7 @@ export function useGoogleCalendarSync(sourceType: 'task' | 'project_event') {
       action?: 'sync' | 'remove';
       timeZone?: string;
     }) => {
-      const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
+      return invokeGoogleCalendarFunction('google-calendar-sync', {
         body: {
           sourceType,
           sourceId,
@@ -100,9 +145,6 @@ export function useGoogleCalendarSync(sourceType: 'task' | 'project_event') {
           timeZone,
         },
       });
-
-      if (error) throw error;
-      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-status'] });
@@ -155,25 +197,30 @@ export function useGoogleCalendarConnect() {
         popup.document.close();
       }
 
-      const { data, error } = await supabase.functions.invoke('google-calendar-auth-url');
-      if (error) {
+      try {
+        const data = await invokeGoogleCalendarFunction<{ authUrl?: string }>(
+          'google-calendar-auth-url',
+          {},
+          GOOGLE_CALENDAR_CONNECT_ERROR,
+        );
+
+        const authUrl = data?.authUrl;
+        if (!authUrl) {
+          popup?.close();
+          throw new Error('No pude generar el link de conexión con Google');
+        }
+
+        if (popup && !popup.closed) {
+          popup.location.href = authUrl;
+        } else {
+          window.location.href = authUrl;
+        }
+
+        return data;
+      } catch (error) {
         popup?.close();
-        throw new Error(await getFunctionErrorMessage(error, 'No pude generar el link de conexión con Google'));
+        throw error;
       }
-
-      const authUrl = data?.authUrl as string | undefined;
-      if (!authUrl) {
-        popup?.close();
-        throw new Error('No pude generar el link de conexión con Google');
-      }
-
-      if (popup && !popup.closed) {
-        popup.location.href = authUrl;
-      } else {
-        window.location.href = authUrl;
-      }
-
-      return data;
     },
   });
 }
@@ -183,11 +230,9 @@ export function useGoogleCalendarExchange() {
 
   return useMutation({
     mutationFn: async ({ code, state }: { code: string; state: string }) => {
-      const { data, error } = await supabase.functions.invoke('google-calendar-exchange', {
+      return invokeGoogleCalendarFunction('google-calendar-exchange', {
         body: { code, state },
       });
-      if (error) throw error;
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-status'] });
@@ -201,9 +246,7 @@ export function useGoogleCalendarDisconnect() {
 
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('google-calendar-disconnect');
-      if (error) throw error;
-      return data;
+      return invokeGoogleCalendarFunction('google-calendar-disconnect');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-status'] });

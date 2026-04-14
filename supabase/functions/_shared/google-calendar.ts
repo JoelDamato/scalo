@@ -55,9 +55,17 @@ export function getServiceRoleClient() {
 export function getGoogleOAuthConfig(originHeader: string | null) {
   const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
   const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
-  const redirectUri =
-    Deno.env.get("GOOGLE_REDIRECT_URI") ||
-    (originHeader ? `${originHeader.replace(/\/$/, "")}/google-calendar/callback` : undefined);
+  const allowedOrigins = new Set([
+    "http://localhost:8080",
+    "https://scalo.tech",
+    "https://www.scalo.tech",
+  ]);
+  const normalizedOrigin = originHeader?.replace(/\/$/, "");
+  const originRedirectUri =
+    normalizedOrigin && allowedOrigins.has(normalizedOrigin)
+      ? `${normalizedOrigin}/google-calendar/callback`
+      : undefined;
+  const redirectUri = originRedirectUri || Deno.env.get("GOOGLE_REDIRECT_URI");
 
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error(

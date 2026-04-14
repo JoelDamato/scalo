@@ -37,6 +37,8 @@ export default function Notifications() {
         return '💬';
       case 'assignment':
         return '📋';
+      case 'report_created':
+        return '📄';
       default:
         return '🔔';
     }
