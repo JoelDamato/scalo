@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useProject, useTasks, calculateProgress, useUpdateProject, useDeleteProject } from '@/hooks/useData';
+import { useProject, useTasks, useUpdateProject, useDeleteProject } from '@/hooks/useData';
 import { useInitiatives } from '@/hooks/useInitiatives';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -85,7 +84,6 @@ export default function ProjectDetail() {
     );
   }
 
-  const progress = calculateProgress(tasks);
   const tasksByStatus = {
     done: tasks.filter(t => t.status === 'done').length,
     'in-progress': tasks.filter(t => t.status === 'in-progress').length,
@@ -197,13 +195,6 @@ export default function ProjectDetail() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Avance general</span>
-                <span className="font-medium">{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 pt-2">
               <div className="text-center p-3 rounded-lg bg-muted/50">
                 <p className="text-2xl font-semibold">{tasksByStatus.done}</p>

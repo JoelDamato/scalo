@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useProjects, useTasks, calculateProgress } from '@/hooks/useData';
+import { useProjects, useTasks } from '@/hooks/useData';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
@@ -98,7 +97,6 @@ export default function Projects() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map((project) => {
               const projectTasks = allTasks.filter(t => t.project_id === project.id);
-              const progress = calculateProgress(projectTasks);
               const doneCount = projectTasks.filter(t => t.status === 'done').length;
               const totalCount = projectTasks.length;
 
@@ -122,13 +120,6 @@ export default function Projects() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Progreso</span>
-                          <span className="font-medium">{progress}%</span>
-                        </div>
-                        <Progress value={progress} className="h-1.5" />
-                      </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <CheckCircle2 className="h-3 w-3" />
