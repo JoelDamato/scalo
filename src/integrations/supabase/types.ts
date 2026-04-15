@@ -1522,6 +1522,41 @@ export type Database = {
         }
         Relationships: []
       }
+      report_addendums: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          report_id: string
+          title: string | null
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          report_id: string
+          title?: string | null
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          report_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_addendums_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           content: string

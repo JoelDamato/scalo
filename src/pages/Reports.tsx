@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { FileText, Loader2, Lock, PlusCircle, Send } from 'lucide-react';
+import { FilePlus2, FileText, Loader2, Lock, PlusCircle, Send } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +24,14 @@ import { MentionInput } from '@/components/mentions/MentionInput';
 import { useAuth } from '@/hooks/useAuth';
 import { useMentionNotifications } from '@/hooks/useNotifications';
 import { useCurrentProfile, useProfiles, type Profile } from '@/hooks/useProfiles';
-import { useCreateReport, useCreateReportComment, useReportComments, useReports } from '@/hooks/useReports';
+import {
+  useCreateReport,
+  useCreateReportAddendum,
+  useCreateReportComment,
+  useReportAddendums,
+  useReportComments,
+  useReports,
+} from '@/hooks/useReports';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function Reports() {
@@ -212,6 +219,11 @@ export default function Reports() {
                       <div className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
                         {report.content}
                       </div>
+                      <ReportAddendums
+                        reportId={report.id}
+                        profiles={profiles}
+                        canAdd={canCommentReports}
+                      />
                       <ReportComments
                         reportId={report.id}
                         reportTitle={report.title}
@@ -227,6 +239,169 @@ export default function Reports() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+function ReportAddendums({
+  reportId,
+  profiles,
+  canAdd,
+}: {
+  reportId: string;
+  profiles: Profile[];
+  canAdd: boolean;
+}) {
+  const { data: addendums = [], isLoading } = useReportAddendums(reportId);
+  const createReportAddendum = useCreateReportAddendum();
+  const [isAdding, setIsAdding] = useState(false);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+
+  const profileByUserId = useMemo(
+    () => new Map(profiles.map((profile) => [profile.user_id, profile])),
+    [profiles],
+  );
+
+  const handleSubmit = async () => {
+    if (!content.trim()) {
+      return;
+    }
+
+    await createReportAddendum.mutateAsync({
+      reportId,
+      title,
+      content,
+    });
+
+    setTitle('');
+    setContent('');
+    setIsAdding(false);
+  };
+
+  return (
+    <div className="mt-6 border-t border-border/60 pt-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h4 className="flex items-center gap-2 text-sm font-semibold">
+            <FilePlus2 className="h-4 w-4" />
+            Anexos
+          </h4>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Agregados posteriores al reporte original. No reemplazan ni editan lo publicado.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">{addendums.length}</Badge>
+          {canAdd ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsAdding((value) => !value)}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Agregar anexo
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2].map((item) => (
+            <div key={item} className="h-20 animate-pulse rounded-lg bg-muted" />
+          ))}
+        </div>
+      ) : addendums.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
+          Todavía no hay anexos en este reporte.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {addendums.map((item, index) => {
+            const author = profileByUserId.get(item.author_id);
+
+            return (
+              <div key={item.id} className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      {item.title || `Anexo ${index + 1}`}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>{author?.name || author?.email || 'Admin'}</span>
+                      <span>·</span>
+                      <span>
+                        {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: es })}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge variant="outline">Agregado</Badge>
+                </div>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground/90">
+                  {item.content}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {canAdd && isAdding ? (
+        <div className="mt-4 space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
+          <div className="space-y-2">
+            <Label htmlFor={`addendum-title-${reportId}`}>Título del anexo (opcional)</Label>
+            <Input
+              id={`addendum-title-${reportId}`}
+              placeholder="Ej: Aclaración sobre métricas"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              maxLength={120}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`addendum-content-${reportId}`}>Agregado</Label>
+            <Textarea
+              id={`addendum-content-${reportId}`}
+              placeholder="Sumá la información nueva sin cambiar el reporte original..."
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              className="min-h-28 resize-y"
+            />
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Se guardará firmado con tu usuario y quedará como anexo histórico.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsAdding(false);
+                  setTitle('');
+                  setContent('');
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSubmit}
+                disabled={!content.trim() || createReportAddendum.isPending}
+              >
+                {createReportAddendum.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FilePlus2 className="mr-2 h-4 w-4" />
+                )}
+                Guardar anexo
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
