@@ -237,14 +237,18 @@ export default function ProjectDetail() {
               <CheckSquare className="h-4 w-4" />
               Tareas
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="gap-2">
-              <CalendarDays className="h-4 w-4" />
-              Calendario
-            </TabsTrigger>
-            <TabsTrigger value="sprints" className="gap-2">
-              <Zap className="h-4 w-4" />
-              Sprints
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="calendar" className="gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Calendario
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="sprints" className="gap-2">
+                <Zap className="h-4 w-4" />
+                Sprints
+              </TabsTrigger>
+            )}
             <TabsTrigger value="instructions" className="gap-2">
               <FileText className="h-4 w-4" />
               Instructivos
@@ -443,13 +447,17 @@ export default function ProjectDetail() {
             )}
           </TabsContent>
 
-          <TabsContent value="calendar" className="mt-6">
-            <ProjectCalendar projectId={id!} />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="calendar" className="mt-6">
+              <ProjectCalendar projectId={id!} />
+            </TabsContent>
+          )}
 
-          <TabsContent value="sprints" className="mt-6">
-            <SprintBoard projectId={id!} />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="sprints" className="mt-6">
+              <SprintBoard projectId={id!} />
+            </TabsContent>
+          )}
 
           <TabsContent value="instructions" className="mt-6">
             <ProjectInstructionsTab projectId={id!} isAdmin={isAdmin} />

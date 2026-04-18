@@ -49,7 +49,7 @@ const App = () => (
               <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
               <Route path="/projects/:id/initiatives/:initiativeId" element={<ProtectedRoute><InitiativeDetail /></ProtectedRoute>} />
               <Route path="/tasks" element={<Navigate to="/my-tasks" replace />} />
-              <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
+              <Route path="/my-tasks" element={<ProtectedRoute adminOnly><MyTasks /></ProtectedRoute>} />
               <Route path="/activity" element={<Navigate to="/dashboard" replace />} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/finance" element={<ProtectedRoute financeOnly><Finance /></ProtectedRoute>} />

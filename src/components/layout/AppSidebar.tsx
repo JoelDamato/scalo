@@ -48,7 +48,6 @@ const mainNavItems = [
 const clientNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Proyectos', url: '/projects', icon: FolderKanban },
-  { title: 'Mis tareas', url: '/my-tasks', icon: ListTodo },
   { title: 'Mis Tickets', url: '/support', icon: Ticket },
 ];
 

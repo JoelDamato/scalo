@@ -20,12 +20,12 @@ export default function Dashboard() {
   const { data: profile } = useProfile(user?.id);
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
-  const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+  const taskIds = useMemo(() => (isAdmin ? tasks.map((task) => task.id) : []), [isAdmin, tasks]);
   const { data: taskAssignees = [], isLoading: taskAssigneesLoading } = useTasksAssignees(taskIds);
   const { data: profiles = [] } = useProfiles();
   const navigate = useNavigate();
 
-  const isLoading = projectsLoading || tasksLoading || taskAssigneesLoading;
+  const isLoading = projectsLoading || tasksLoading || (isAdmin && taskAssigneesLoading);
   const userName = profile?.name?.split(' ')[0] || 'there';
 
   // Contextual greeting
@@ -76,8 +76,6 @@ export default function Dashboard() {
           userName={userName}
           projects={projects}
           tasks={tasks}
-          assignees={taskAssignees}
-          profiles={profiles}
         />
       </AppLayout>
     );
