@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
-import { CalendarClock, CheckSquare, Plus } from 'lucide-react';
+import { CalendarClock, CheckSquare, GripVertical, Plus } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -197,42 +197,55 @@ export default function MyTasks() {
                                       <div
                                         ref={dragProvided.innerRef}
                                         {...dragProvided.draggableProps}
-                                        {...dragProvided.dragHandleProps}
                                       >
-                                        <button
-                                          type="button"
-                                          onClick={() => setSelectedTask(task)}
+                                        <div
                                           className={cn(
                                             'w-full rounded-xl border border-border/70 bg-card p-3 text-left shadow-sm transition hover:border-primary/40 hover:bg-muted/30',
                                             dragSnapshot.isDragging && 'rotate-1 border-primary/50 shadow-lg'
                                           )}
                                         >
-                                          <div className="flex flex-wrap items-center gap-2">
-                                            {project ? (
-                                              <Badge variant="outline" className="max-w-full truncate">
-                                                {project.name}
-                                              </Badge>
-                                            ) : (
-                                              <Badge variant="secondary">Interna</Badge>
-                                            )}
-                                            <StatusBadge status={task.status} />
+                                          <div className="flex items-start gap-2">
+                                            <button
+                                              type="button"
+                                              className="mt-0.5 rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground active:cursor-grabbing"
+                                              aria-label="Arrastrar tarea"
+                                              {...dragProvided.dragHandleProps}
+                                            >
+                                              <GripVertical className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setSelectedTask(task)}
+                                              className="min-w-0 flex-1 text-left"
+                                            >
+                                              <div className="flex flex-wrap items-center gap-2">
+                                                {project ? (
+                                                  <Badge variant="outline" className="max-w-full truncate">
+                                                    {project.name}
+                                                  </Badge>
+                                                ) : (
+                                                  <Badge variant="secondary">Interna</Badge>
+                                                )}
+                                                <StatusBadge status={task.status} />
+                                              </div>
+                                              <h3 className="mt-3 text-sm font-medium leading-snug">{task.title}</h3>
+                                              {task.description && (
+                                                <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                                                  {task.description}
+                                                </p>
+                                              )}
+                                              {task.scheduled_date && (
+                                                <div className="mt-3 flex items-center gap-1.5 border-t border-border/70 pt-2 text-xs text-muted-foreground">
+                                                  <CalendarClock className="h-3.5 w-3.5" />
+                                                  <span>
+                                                    {task.scheduled_date}
+                                                    {task.scheduled_time ? ` · ${task.scheduled_time.slice(0, 5)}` : ''}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </button>
                                           </div>
-                                          <h3 className="mt-3 text-sm font-medium leading-snug">{task.title}</h3>
-                                          {task.description && (
-                                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                                              {task.description}
-                                            </p>
-                                          )}
-                                          {task.scheduled_date && (
-                                            <div className="mt-3 flex items-center gap-1.5 border-t border-border/70 pt-2 text-xs text-muted-foreground">
-                                              <CalendarClock className="h-3.5 w-3.5" />
-                                              <span>
-                                                {task.scheduled_date}
-                                                {task.scheduled_time ? ` · ${task.scheduled_time.slice(0, 5)}` : ''}
-                                              </span>
-                                            </div>
-                                          )}
-                                        </button>
+                                        </div>
                                       </div>
                                     )}
                                   </Draggable>
