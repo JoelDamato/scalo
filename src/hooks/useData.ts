@@ -198,6 +198,7 @@ export function useUpdateTaskStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
     }
   });
 }
