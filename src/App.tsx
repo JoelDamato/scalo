@@ -20,6 +20,7 @@ import Notifications from "./pages/Notifications";
 import Support from "./pages/Support";
 import Reports from "./pages/Reports";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
+import ProjectOnboarding from "./pages/ProjectOnboarding";
 
 import Resources from "./pages/Resources";
 import SharedInitiative from "./pages/SharedInitiative";
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/calculadoraderoi" element={<RoiCalculator />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding/:token" element={<ProjectOnboarding />} />
               <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />
               <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />

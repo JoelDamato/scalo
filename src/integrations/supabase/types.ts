@@ -1459,6 +1459,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          onboarding_token: string
           status: string
           support_active: boolean
           updated_at: string
@@ -1470,6 +1471,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          onboarding_token?: string
           status?: string
           support_active?: boolean
           updated_at?: string
@@ -1481,6 +1483,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          onboarding_token?: string
           status?: string
           support_active?: boolean
           updated_at?: string
@@ -2166,6 +2169,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_project_onboarding: {
+        Args: { p_token: string }
+        Returns: string
+      }
       delete_initiative_cascade: {
         Args: { p_initiative_id: string }
         Returns: undefined
@@ -2180,6 +2187,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      get_project_onboarding: {
+        Args: { p_token: string }
+        Returns: {
+          project_id: string
+          project_name: string
+          project_description: string | null
+          support_active: boolean
+        }[]
       }
       can_access_finance: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }

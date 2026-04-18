@@ -10,6 +10,7 @@ export interface Project {
   support_active: boolean;
   client_id: string | null;
   customer_id: string | null;
+  onboarding_token: string;
   created_at: string;
   updated_at: string;
 }

@@ -38,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckSquare, LayoutDashboard, Rocket, Plus, Users, Trash2, Pencil, Save, X, CalendarDays, Zap, KeyRound, FileText, Globe } from 'lucide-react';
+import { CalendarDays, CheckSquare, Copy, ExternalLink, FileText, Globe, KeyRound, LayoutDashboard, Link2, Pencil, Plus, Rocket, Save, Trash2, Users, X, Zap } from 'lucide-react';
 import { SprintBoard } from '@/components/sprints/SprintBoard';
 import { ProjectCalendar } from '@/components/projects/ProjectCalendar';
 import { toast } from 'sonner';
@@ -363,6 +363,13 @@ export default function ProjectDetail() {
                   <ProjectMembersSelector projectId={id!} isAdmin={isAdmin} />
                 </CardContent>
               </Card>
+
+              {isAdmin && (
+                <ProjectOnboardingLinkCard
+                  projectName={project.name}
+                  onboardingToken={project.onboarding_token}
+                />
+              )}
             </div>
           </TabsContent>
 
@@ -466,5 +473,55 @@ export default function ProjectDetail() {
         />
       </div>
     </AppLayout>
+  );
+}
+
+function ProjectOnboardingLinkCard({
+  projectName,
+  onboardingToken,
+}: {
+  projectName: string;
+  onboardingToken: string;
+}) {
+  const onboardingUrl = `${window.location.origin}/onboarding/${onboardingToken}`;
+
+  const copyOnboardingUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(onboardingUrl);
+      toast.success('Link de onboarding copiado');
+    } catch {
+      toast.error('No pude copiar el link');
+    }
+  };
+
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+          <Link2 className="h-4 w-4" />
+          Link de onboarding para cliente
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Compartí este link con el cliente de {projectName}. Desde ahí puede ver la bienvenida, crear su cuenta y quedar vinculado al proyecto.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input value={onboardingUrl} readOnly className="font-mono text-xs" />
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={copyOnboardingUrl} className="flex-1 gap-2 sm:flex-none">
+              <Copy className="h-4 w-4" />
+              Copiar
+            </Button>
+            <Button variant="outline" asChild className="flex-1 gap-2 sm:flex-none">
+              <a href={onboardingUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                Abrir
+              </a>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
