@@ -26,6 +26,8 @@ interface TaskActivityChartProps {
   tasks: Task[];
   assignees: TaskAssignee[];
   profiles: Profile[];
+  selectedMonth?: string;
+  onSelectedMonthChange?: (month: string) => void;
   className?: string;
 }
 
@@ -52,9 +54,26 @@ function getPersonName(userId: string, profiles: Profile[]) {
   return profile?.name || profile?.email || `Usuario ${userId.slice(0, 8)}`;
 }
 
-export function TaskActivityChart({ tasks, assignees, profiles, className }: TaskActivityChartProps) {
-  const [selectedMonth, setSelectedMonth] = useState(() => getMonthValue(new Date()));
+export function TaskActivityChart({
+  tasks,
+  assignees,
+  profiles,
+  selectedMonth: selectedMonthProp,
+  onSelectedMonthChange,
+  className,
+}: TaskActivityChartProps) {
+  const [internalSelectedMonth, setInternalSelectedMonth] = useState(() => getMonthValue(new Date()));
   const [personFilter, setPersonFilter] = useState('all');
+  const hasExternalMonth = !!selectedMonthProp && !!onSelectedMonthChange;
+  const selectedMonth = selectedMonthProp || internalSelectedMonth;
+  const setSelectedMonth = (month: string) => {
+    if (onSelectedMonthChange) {
+      onSelectedMonthChange(month);
+      return;
+    }
+
+    setInternalSelectedMonth(month);
+  };
 
   const taskAssigneesByTaskId = useMemo(() => {
     const grouped = new Map<string, Set<string>>();
@@ -152,21 +171,23 @@ export function TaskActivityChart({ tasks, assignees, profiles, className }: Tas
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="task-activity-month" className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <CalendarDays className="h-3.5 w-3.5" />
-              Mes
-            </Label>
-            <Input
-              id="task-activity-month"
-              type="month"
-              value={selectedMonth}
-              onChange={(event) => {
-                if (event.target.value) setSelectedMonth(event.target.value);
-              }}
-            />
-          </div>
+        <div className={cn('grid gap-3', hasExternalMonth ? 'sm:grid-cols-1' : 'sm:grid-cols-2')}>
+          {!hasExternalMonth && (
+            <div className="space-y-1.5">
+              <Label htmlFor="task-activity-month" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Mes
+              </Label>
+              <Input
+                id="task-activity-month"
+                type="month"
+                value={selectedMonth}
+                onChange={(event) => {
+                  if (event.target.value) setSelectedMonth(event.target.value);
+                }}
+              />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <UserRound className="h-3.5 w-3.5" />

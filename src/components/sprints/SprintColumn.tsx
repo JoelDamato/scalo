@@ -8,7 +8,7 @@ const columnLabels: Record<StoryStatus, string> = {
   todo: 'To Do',
   in_progress: 'In Progress',
   review: 'Review',
-  done: 'Done',
+  done: 'Finalizadas',
 };
 
 const columnColors: Record<StoryStatus, string> = {

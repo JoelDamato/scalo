@@ -75,7 +75,7 @@ export function ClientProjectCard({ project, tasks }: ClientProjectCardProps) {
             <CheckCircle2 className="h-4 w-4 text-status-done" />
             <div>
               <div className="text-lg font-semibold">{taskCounts.done}</div>
-              <div className="text-[10px] text-muted-foreground">Completadas</div>
+              <div className="text-[10px] text-muted-foreground">Finalizadas</div>
             </div>
           </div>
         </div>

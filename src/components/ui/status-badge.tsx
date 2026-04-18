@@ -20,7 +20,7 @@ const taskStatusConfig: Record<TaskStatus, { label: string; className: string }>
     className: 'bg-status-review/15 text-status-review border-status-review/20',
   },
   done: {
-    label: 'Hecho',
+    label: 'Finalizada',
     className: 'bg-status-done/15 text-status-done border-status-done/20',
   },
 };

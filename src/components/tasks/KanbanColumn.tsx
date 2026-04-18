@@ -26,7 +26,7 @@ const columnConfig: Record<TaskStatus, { title: string; dotColor: string }> = {
   backlog: { title: 'Backlog', dotColor: 'bg-status-backlog' },
   'in-progress': { title: 'En progreso', dotColor: 'bg-status-in-progress' },
   review: { title: 'Revisión', dotColor: 'bg-status-review' },
-  done: { title: 'Hecho', dotColor: 'bg-status-done' },
+  done: { title: 'Finalizadas', dotColor: 'bg-status-done' },
 };
 
 export function KanbanColumn({ status, tasks, onTaskClick, isReadOnly, projectId, mode = 'project', assignees = [], profiles = [] }: KanbanColumnProps) {

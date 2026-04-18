@@ -76,7 +76,7 @@ export function ProjectStatusCard({ project, tasks }: ProjectStatusCardProps) {
             </div>
             <div className="p-2 rounded-md bg-muted/50">
               <div className="text-lg font-semibold text-status-done">{taskCounts.done}</div>
-              <div className="text-[10px] text-muted-foreground">Done</div>
+              <div className="text-[10px] text-muted-foreground">Finalizadas</div>
             </div>
           </div>
         </div>

@@ -168,7 +168,7 @@ export function CreateTaskDialog({
                 <SelectItem value="backlog">Backlog</SelectItem>
                 <SelectItem value="in-progress">En progreso</SelectItem>
                 <SelectItem value="review">Revisión</SelectItem>
-                <SelectItem value="done">Hecho</SelectItem>
+                <SelectItem value="done">Finalizada</SelectItem>
               </SelectContent>
             </Select>
           </div>

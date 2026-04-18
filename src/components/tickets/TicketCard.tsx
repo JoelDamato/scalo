@@ -9,6 +9,7 @@ import { SupportTicket, TicketCategory, TicketPriority, TicketStatus } from '@/h
 interface TicketCardProps {
   ticket: SupportTicket;
   onClick?: () => void;
+  actions?: React.ReactNode;
 }
 
 const categoryConfig: Record<TicketCategory, { icon: React.ElementType; label: string }> = {
@@ -33,7 +34,7 @@ const statusConfig: Record<TicketStatus, { label: string; className: string }> =
   closed: { label: 'Cerrado', className: 'bg-muted text-muted-foreground' },
 };
 
-export function TicketCard({ ticket, onClick }: TicketCardProps) {
+export function TicketCard({ ticket, onClick, actions }: TicketCardProps) {
   const CategoryIcon = categoryConfig[ticket.category].icon;
   const priority = priorityConfig[ticket.priority];
   const status = statusConfig[ticket.status];
@@ -78,6 +79,12 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
                   {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true, locale: es })}
                 </span>
               </div>
+
+              {actions && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {actions}
+                </div>
+              )}
             </div>
           </div>
         </div>

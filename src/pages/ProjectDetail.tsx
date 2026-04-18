@@ -198,7 +198,7 @@ export default function ProjectDetail() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 pt-2">
               <div className="text-center p-3 rounded-lg bg-muted/50">
                 <p className="text-2xl font-semibold">{tasksByStatus.done}</p>
-                <p className="text-xs text-muted-foreground">Completadas</p>
+                <p className="text-xs text-muted-foreground">Finalizadas</p>
               </div>
               <div className="text-center p-3 rounded-lg bg-muted/50">
                 <p className="text-2xl font-semibold">{tasksByStatus['in-progress']}</p>

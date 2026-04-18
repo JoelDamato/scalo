@@ -6,26 +6,57 @@ import { TaskActivityChart } from '@/components/dashboard/TaskActivityChart';
 import { Project, useProjects, useTasks, useProfile } from '@/hooks/useData';
 import { useTasksAssignees } from '@/hooks/useTaskAssignees';
 import { useProfiles } from '@/hooks/useProfiles';
+import { useCustomers } from '@/hooks/useCRM';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FolderKanban, CheckSquare, AlertCircle, LifeBuoy, Plus, Upload, ArrowRight, CircleDot } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { FolderKanban, CheckSquare, AlertCircle, LifeBuoy, Plus, Upload, ArrowRight, CircleDot, CheckCircle2, CalendarDays, UsersRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+
+function getMonthValue(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${date.getFullYear()}-${month}`;
+}
+
+function getMonthRange(monthValue: string) {
+  const [year, month] = monthValue.split('-').map(Number);
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0, 23, 59, 59, 999);
+  return { start, end };
+}
+
+function isDateInRange(dateValue: string | null | undefined, start: Date, end: Date) {
+  if (!dateValue) return false;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return false;
+  return date >= start && date <= end;
+}
+
+function isDateBeforeOrInRange(dateValue: string | null | undefined, end: Date) {
+  if (!dateValue) return false;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return false;
+  return date <= end;
+}
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
+  const { data: customers = [], isLoading: customersLoading } = useCustomers();
   const taskIds = useMemo(() => (isAdmin ? tasks.map((task) => task.id) : []), [isAdmin, tasks]);
   const { data: taskAssignees = [], isLoading: taskAssigneesLoading } = useTasksAssignees(taskIds);
   const { data: profiles = [] } = useProfiles();
   const navigate = useNavigate();
+  const [selectedMonth, setSelectedMonth] = useState(() => getMonthValue(new Date()));
 
-  const isLoading = projectsLoading || tasksLoading || (isAdmin && taskAssigneesLoading);
+  const isLoading = projectsLoading || tasksLoading || customersLoading || (isAdmin && taskAssigneesLoading);
   const userName = profile?.name?.split(' ')[0] || 'there';
 
   // Contextual greeting
@@ -37,16 +68,37 @@ export default function Dashboard() {
   };
 
   // Stats
-  const activeProjects = projects.filter(p => p.status === 'active').length;
+  const selectedMonthRange = useMemo(() => getMonthRange(selectedMonth), [selectedMonth]);
+  const selectedMonthLabel = useMemo(() => (
+    new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(selectedMonthRange.start)
+  ), [selectedMonthRange.start]);
+  const activeCustomers = customers.filter((customer) =>
+    customer.stage === 'client' && isDateBeforeOrInRange(customer.created_at, selectedMonthRange.end)
+  ).length;
+  const activeProjects = projects.filter((project) =>
+    project.status === 'active' && isDateBeforeOrInRange(project.created_at, selectedMonthRange.end)
+  ).length;
   const supportActiveProjects = projects
-    .filter(p => p.support_active)
+    .filter((project) => project.support_active && isDateBeforeOrInRange(project.created_at, selectedMonthRange.end))
     .sort((a, b) => {
       if (a.status === 'active' && b.status !== 'active') return -1;
       if (a.status !== 'active' && b.status === 'active') return 1;
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
-  const tasksDueToday = tasks.filter(t => t.status === 'in-progress').length;
-  const openIssues = tasks.filter(t => t.status === 'review' && t.client_input_required).length;
+  const createdTasks = tasks.filter((task) =>
+    isDateInRange(task.created_at, selectedMonthRange.start, selectedMonthRange.end)
+  ).length;
+  const finishedTasks = tasks.filter((task) =>
+    task.status === 'done' && isDateInRange(task.updated_at, selectedMonthRange.start, selectedMonthRange.end)
+  ).length;
+  const inProgressTasks = tasks.filter((task) =>
+    task.status === 'in-progress' && isDateInRange(task.updated_at, selectedMonthRange.start, selectedMonthRange.end)
+  ).length;
+  const openIssues = tasks.filter((task) =>
+    task.status === 'review'
+    && task.client_input_required
+    && isDateInRange(task.updated_at, selectedMonthRange.start, selectedMonthRange.end)
+  ).length;
 
   if (isLoading) {
     return (
@@ -56,8 +108,8 @@ export default function Dashboard() {
             <Skeleton className="h-12 w-96" />
             <Skeleton className="h-10 w-40" />
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28" />)}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+            {[1, 2, 3, 4, 5, 6, 7].map(i => <Skeleton key={i} className="h-28" />)}
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
             <Skeleton className="h-80" />
@@ -92,10 +144,25 @@ export default function Dashboard() {
               {getGreeting()}, {userName}!
             </h2>
             <p className="text-muted-foreground mt-1">
-              Acá tenés un resumen de lo que está pasando hoy.
+              Acá tenés un resumen de {selectedMonthLabel}.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="space-y-1.5">
+              <Label htmlFor="dashboard-month" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Mes
+              </Label>
+              <Input
+                id="dashboard-month"
+                type="month"
+                value={selectedMonth}
+                onChange={(event) => {
+                  if (event.target.value) setSelectedMonth(event.target.value);
+                }}
+                className="w-full sm:w-44"
+              />
+            </div>
             <Button variant="outline" size="sm" className="gap-2">
               <Upload className="h-4 w-4" />
               Importar
@@ -108,40 +175,67 @@ export default function Dashboard() {
         </div>
 
         {/* Stat cards row */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+          <StatCard
+            title="Clientes activos"
+            value={activeCustomers}
+            icon={UsersRound}
+            accentColor="green"
+            delay={0}
+          />
           <StatCard
             title="Proyectos activos"
             value={activeProjects}
             icon={FolderKanban}
             accentColor="blue"
-            delay={0}
+            delay={50}
           />
           <StatCard
-            title="Tareas en progreso"
-            value={tasksDueToday}
+            title="Tareas creadas"
+            value={createdTasks}
             icon={CheckSquare}
             accentColor="amber"
-            delay={50}
+            delay={100}
+          />
+          <StatCard
+            title="Tareas finalizadas"
+            value={finishedTasks}
+            icon={CheckCircle2}
+            accentColor="green"
+            delay={150}
           />
           <StatCard
             title="Issues abiertos"
             value={openIssues}
             icon={AlertCircle}
             accentColor="rose"
-            delay={100}
+            delay={200}
+          />
+          <StatCard
+            title="Tareas en progreso"
+            value={inProgressTasks}
+            icon={CheckSquare}
+            accentColor="amber"
+            delay={250}
           />
           <StatCard
             title="Soporte activo"
             value={supportActiveProjects.length}
             icon={LifeBuoy}
-            accentColor="green"
-            delay={150}
+            accentColor="blue"
+            delay={300}
           />
         </div>
 
         {/* Main content grid */}
         <div className="grid gap-5 lg:grid-cols-2">
-          <TaskActivityChart tasks={tasks} assignees={taskAssignees} profiles={profiles} />
+          <TaskActivityChart
+            tasks={tasks}
+            assignees={taskAssignees}
+            profiles={profiles}
+            selectedMonth={selectedMonth}
+            onSelectedMonthChange={setSelectedMonth}
+          />
 
           {/* Active support projects */}
           <Card className="animate-fade-in border-border/80 hover:border-border transition-colors" style={{ animationDelay: '50ms' }}>
