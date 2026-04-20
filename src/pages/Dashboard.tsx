@@ -7,6 +7,7 @@ import { Project, useProjects, useTasks, useProfile } from '@/hooks/useData';
 import { useTasksAssignees } from '@/hooks/useTaskAssignees';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useCustomers } from '@/hooks/useCRM';
+import { useTickets } from '@/hooks/useTickets';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FolderKanban, CheckSquare, AlertCircle, LifeBuoy, Plus, Upload, ArrowRight, CircleDot, CheckCircle2, CalendarDays, UsersRound } from 'lucide-react';
+import { FolderKanban, CheckSquare, AlertCircle, LifeBuoy, Plus, Upload, ArrowRight, CircleDot, CheckCircle2, CalendarDays, UsersRound, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 
@@ -50,13 +51,14 @@ export default function Dashboard() {
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const { data: customers = [], isLoading: customersLoading } = useCustomers();
+  const { data: tickets = [], isLoading: ticketsLoading } = useTickets();
   const taskIds = useMemo(() => (isAdmin ? tasks.map((task) => task.id) : []), [isAdmin, tasks]);
   const { data: taskAssignees = [], isLoading: taskAssigneesLoading } = useTasksAssignees(taskIds);
   const { data: profiles = [] } = useProfiles();
   const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState(() => getMonthValue(new Date()));
 
-  const isLoading = projectsLoading || tasksLoading || customersLoading || (isAdmin && taskAssigneesLoading);
+  const isLoading = projectsLoading || tasksLoading || customersLoading || ticketsLoading || (isAdmin && taskAssigneesLoading);
   const userName = profile?.name?.split(' ')[0] || 'there';
 
   // Contextual greeting
@@ -99,6 +101,13 @@ export default function Dashboard() {
     && task.client_input_required
     && isDateInRange(task.updated_at, selectedMonthRange.start, selectedMonthRange.end)
   ).length;
+  const createdTickets = tickets.filter((ticket) =>
+    isDateInRange(ticket.created_at, selectedMonthRange.start, selectedMonthRange.end)
+  ).length;
+  const finishedTickets = tickets.filter((ticket) =>
+    (ticket.status === 'resolved' || ticket.status === 'closed')
+    && isDateInRange(ticket.resolved_at || ticket.updated_at, selectedMonthRange.start, selectedMonthRange.end)
+  ).length;
 
   if (isLoading) {
     return (
@@ -108,8 +117,8 @@ export default function Dashboard() {
             <Skeleton className="h-12 w-96" />
             <Skeleton className="h-10 w-40" />
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-            {[1, 2, 3, 4, 5, 6, 7].map(i => <Skeleton key={i} className="h-28" />)}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-9 xl:gap-3">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => <Skeleton key={i} className="h-28 min-w-0" />)}
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
             <Skeleton className="h-80" />
@@ -175,26 +184,29 @@ export default function Dashboard() {
         </div>
 
         {/* Stat cards row */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-9 xl:gap-3">
           <StatCard
             title="Clientes activos"
             value={activeCustomers}
             icon={UsersRound}
             accentColor="green"
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
             delay={0}
-          />
-          <StatCard
-            title="Proyectos activos"
-            value={activeProjects}
-            icon={FolderKanban}
-            accentColor="blue"
-            delay={50}
           />
           <StatCard
             title="Tareas creadas"
             value={createdTasks}
             icon={CheckSquare}
             accentColor="amber"
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
+            delay={50}
+          />
+          <StatCard
+            title="Tareas en progreso"
+            value={inProgressTasks}
+            icon={CheckSquare}
+            accentColor="amber"
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
             delay={100}
           />
           <StatCard
@@ -202,28 +214,48 @@ export default function Dashboard() {
             value={finishedTasks}
             icon={CheckCircle2}
             accentColor="green"
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
             delay={150}
+          />
+          <StatCard
+            title="Tickets creados"
+            value={createdTickets}
+            icon={Ticket}
+            accentColor="blue"
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
+            delay={200}
+          />
+          <StatCard
+            title="Tickets finalizados"
+            value={finishedTickets}
+            icon={CheckCircle2}
+            accentColor="green"
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
+            delay={250}
+          />
+          <StatCard
+            title="Proyectos activos"
+            value={activeProjects}
+            icon={FolderKanban}
+            accentColor="blue"
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
+            delay={300}
           />
           <StatCard
             title="Issues abiertos"
             value={openIssues}
             icon={AlertCircle}
             accentColor="rose"
-            delay={200}
-          />
-          <StatCard
-            title="Tareas en progreso"
-            value={inProgressTasks}
-            icon={CheckSquare}
-            accentColor="amber"
-            delay={250}
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
+            delay={350}
           />
           <StatCard
             title="Soporte activo"
             value={supportActiveProjects.length}
             icon={LifeBuoy}
             accentColor="blue"
-            delay={300}
+            className="min-w-0 p-3 xl:p-4 [&_p:first-child]:text-2xl [&_p:last-child]:text-xs"
+            delay={400}
           />
         </div>
 
@@ -235,6 +267,7 @@ export default function Dashboard() {
             profiles={profiles}
             selectedMonth={selectedMonth}
             onSelectedMonthChange={setSelectedMonth}
+            className="lg:col-span-2"
           />
 
           {/* Active support projects */}

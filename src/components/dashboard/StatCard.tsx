@@ -64,7 +64,7 @@ export function StatCard({
       </div>
       <div className="space-y-1">
         <p className="text-[32px] font-semibold tracking-tight leading-none">{displayValue}</p>
-        <p className="text-sm text-muted-foreground">{title}</p>
+        <p className="text-sm text-muted-foreground leading-tight break-words">{title}</p>
       </div>
     </div>
   );

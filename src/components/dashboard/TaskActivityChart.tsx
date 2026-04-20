@@ -32,9 +32,17 @@ interface TaskActivityChartProps {
 }
 
 const chartConfig = {
-  tareas: {
-    label: 'Tareas',
-    color: 'hsl(var(--primary))',
+  creadas: {
+    label: 'Creadas',
+    color: 'hsl(var(--accent-blue))',
+  },
+  enProgreso: {
+    label: 'En progreso',
+    color: 'hsl(var(--accent-amber))',
+  },
+  finalizadas: {
+    label: 'Finalizadas',
+    color: 'hsl(var(--status-done))',
   },
 } satisfies ChartConfig;
 
@@ -47,6 +55,12 @@ function getTaskMonthValue(dateValue: string) {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return null;
   return getMonthValue(date);
+}
+
+function getDayIndex(dateValue: string) {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.getDate() - 1;
 }
 
 function getPersonName(userId: string, profiles: Profile[]) {
@@ -118,12 +132,12 @@ export function TaskActivityChart({
     const daysInMonth = new Date(yearValue, monthIndex + 1, 0).getDate();
     const baseData = Array.from({ length: daysInMonth }, (_, index) => ({
       day: String(index + 1).padStart(2, '0'),
-      tareas: 0,
+      creadas: 0,
+      enProgreso: 0,
+      finalizadas: 0,
     }));
 
     tasks.forEach((task) => {
-      if (getTaskMonthValue(task.created_at) !== selectedMonth) return;
-
       const assignedPeople = taskAssigneesByTaskId.get(task.id) || new Set<string>();
       const matchesPerson =
         personFilter === 'all'
@@ -132,17 +146,39 @@ export function TaskActivityChart({
 
       if (!matchesPerson) return;
 
-      const createdAt = new Date(task.created_at);
-      const dayIndex = createdAt.getDate() - 1;
-      if (baseData[dayIndex]) {
-        baseData[dayIndex].tareas += 1;
+      if (getTaskMonthValue(task.created_at) === selectedMonth) {
+        const createdDayIndex = getDayIndex(task.created_at);
+        if (createdDayIndex !== null && baseData[createdDayIndex]) {
+          baseData[createdDayIndex].creadas += 1;
+        }
+      }
+
+      if (task.status === 'in-progress' && getTaskMonthValue(task.updated_at) === selectedMonth) {
+        const progressDayIndex = getDayIndex(task.updated_at);
+        if (progressDayIndex !== null && baseData[progressDayIndex]) {
+          baseData[progressDayIndex].enProgreso += 1;
+        }
+      }
+
+      if (task.status === 'done' && getTaskMonthValue(task.updated_at) === selectedMonth) {
+        const finishedDayIndex = getDayIndex(task.updated_at);
+        if (finishedDayIndex !== null && baseData[finishedDayIndex]) {
+          baseData[finishedDayIndex].finalizadas += 1;
+        }
       }
     });
 
     return baseData;
   }, [personFilter, selectedMonth, taskAssigneesByTaskId, tasks]);
 
-  const totalTasks = chartData.reduce((total, day) => total + day.tareas, 0);
+  const totals = chartData.reduce(
+    (currentTotals, day) => ({
+      creadas: currentTotals.creadas + day.creadas,
+      enProgreso: currentTotals.enProgreso + day.enProgreso,
+      finalizadas: currentTotals.finalizadas + day.finalizadas,
+    }),
+    { creadas: 0, enProgreso: 0, finalizadas: 0 },
+  );
   const selectedMonthLabel = useMemo(() => {
     const [yearValue, monthValue] = selectedMonth.split('-').map(Number);
     return new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(
@@ -161,13 +197,23 @@ export function TaskActivityChart({
             <div>
               <CardTitle className="text-base font-semibold">Actividad diaria de tareas</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Tareas creadas por día durante {selectedMonthLabel}
+                Creadas, en progreso y finalizadas durante {selectedMonthLabel}
               </p>
             </div>
           </div>
-          <div className="rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-right">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total del mes</p>
-            <p className="text-2xl font-semibold leading-none">{totalTasks}</p>
+          <div className="grid grid-cols-3 gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-right">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Creadas</p>
+              <p className="text-xl font-semibold leading-none">{totals.creadas}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">En progreso</p>
+              <p className="text-xl font-semibold leading-none">{totals.enProgreso}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Finalizadas</p>
+              <p className="text-xl font-semibold leading-none">{totals.finalizadas}</p>
+            </div>
           </div>
         </div>
 
@@ -213,7 +259,7 @@ export function TaskActivityChart({
         </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[260px] w-full">
+        <ChartContainer config={chartConfig} className="h-[380px] w-full">
           <LineChart data={chartData} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} strokeDasharray="4 4" />
             <XAxis
@@ -234,9 +280,25 @@ export function TaskActivityChart({
               }
             />
             <Line
-              dataKey="tareas"
+              dataKey="creadas"
               type="monotone"
-              stroke="var(--color-tareas)"
+              stroke="var(--color-creadas)"
+              strokeWidth={3}
+              dot={{ r: 2.5 }}
+              activeDot={{ r: 5 }}
+            />
+            <Line
+              dataKey="enProgreso"
+              type="monotone"
+              stroke="var(--color-enProgreso)"
+              strokeWidth={3}
+              dot={{ r: 2.5 }}
+              activeDot={{ r: 5 }}
+            />
+            <Line
+              dataKey="finalizadas"
+              type="monotone"
+              stroke="var(--color-finalizadas)"
               strokeWidth={3}
               dot={{ r: 2.5 }}
               activeDot={{ r: 5 }}
