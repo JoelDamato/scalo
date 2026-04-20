@@ -9,7 +9,8 @@ import {
   Wallet,
   Ticket,
   BookOpen,
-  FileText
+  FileText,
+  Webhook
 } from 'lucide-react';
 import scaloLogo from '@/assets/scalo-logo.png';
 
@@ -42,6 +43,7 @@ const mainNavItems = [
   { title: 'Soporte', url: '/support', icon: Ticket },
   { title: 'Finanzas', url: '/finance', icon: Wallet },
   { title: 'Reportes', url: '/reports', icon: FileText },
+  { title: 'Webhooks', url: '/webhooks', icon: Webhook },
   { title: 'Recursos', url: '/resources', icon: BookOpen },
 ];
 

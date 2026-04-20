@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import Notifications from "./pages/Notifications";
 import Support from "./pages/Support";
 import Reports from "./pages/Reports";
+import WebhookDocs from "./pages/WebhookDocs";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
 import ProjectOnboarding from "./pages/ProjectOnboarding";
 
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/finance" element={<ProtectedRoute financeOnly><Finance /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute adminOnly><Reports /></ProtectedRoute>} />
+              <Route path="/webhooks" element={<ProtectedRoute adminOnly><WebhookDocs /></ProtectedRoute>} />
               
               <Route path="/resources" element={<ProtectedRoute adminOnly><Resources /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
