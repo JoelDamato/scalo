@@ -169,26 +169,13 @@ async function createTaskImageAttachments({
 
 // Projects hooks
 export function useProjects() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   
   return useQuery({
-    queryKey: ['projects', isAdmin, user?.id],
+    queryKey: ['projects', user?.id],
     queryFn: async () => {
-      // Admins see all projects
-      if (isAdmin) {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .order('updated_at', { ascending: false });
-        
-        if (error) throw error;
-        return data as Project[];
-      }
-      
-      // Clients see only projects they're members of
       if (!user?.id) return [];
-      
-      // First get project IDs where user is a member
+
       const { data: memberships, error: membershipError } = await supabase
         .from('project_members')
         .select('project_id')
@@ -213,9 +200,25 @@ export function useProjects() {
 }
 
 export function useProject(id: string) {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['projects', id],
+    queryKey: ['projects', id, user?.id],
     queryFn: async () => {
+      if (!id) return null;
+
+      if (!user?.id) return null;
+
+      const { data: membership, error: membershipError } = await supabase
+        .from('project_members')
+        .select('id')
+        .eq('project_id', id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (membershipError) throw membershipError;
+      if (!membership) return null;
+
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -231,6 +234,7 @@ export function useProject(id: string) {
 
 export function useCreateProject() {
   const queryClient = useQueryClient();
+  const { user, role } = useAuth();
   
   return useMutation({
     mutationFn: async (project: { name: string; description?: string; status?: string; support_active?: boolean; client_id?: string; customer_id?: string }) => {
@@ -241,6 +245,22 @@ export function useCreateProject() {
         .single();
       
       if (error) throw error;
+
+      if (user?.id && role && (role === 'admin' || role === 'dev')) {
+        const { error: memberError } = await supabase
+          .from('project_members')
+          .upsert(
+            {
+              project_id: data.id,
+              user_id: user.id,
+              role,
+            },
+            { onConflict: 'project_id,user_id' },
+          );
+
+        if (memberError) throw memberError;
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -252,20 +272,29 @@ export function useCreateProject() {
 // Tasks hooks
 // projectId: specific project | 'internal' for tasks without project | undefined for all
 export function useTasks(projectId?: string | 'internal') {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   
   return useQuery({
-    queryKey: ['tasks', projectId, isAdmin, user?.id],
+    queryKey: ['tasks', projectId, user?.id],
     queryFn: async () => {
+      if (!user?.id) return [] as Task[];
+
       let query = supabase.from('tasks').select('*');
       
       if (projectId === 'internal') {
-        // Internal/operational tasks have no project - only for admins
         query = query.is('project_id', null);
       } else if (projectId) {
+        const { data: membership, error: membershipError } = await supabase
+          .from('project_members')
+          .select('id')
+          .eq('project_id', projectId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (membershipError) throw membershipError;
+        if (!membership) return [] as Task[];
         query = query.eq('project_id', projectId);
-      } else if (!isAdmin && user?.id) {
-        // Clients without specific projectId: get tasks only for their projects
+      } else {
         const { data: memberships } = await supabase
           .from('project_members')
           .select('project_id')
@@ -276,7 +305,7 @@ export function useTasks(projectId?: string | 'internal') {
         }
         
         const projectIds = memberships.map(m => m.project_id);
-        query = query.in('project_id', projectIds);
+        query = query.or(`project_id.is.null,project_id.in.(${projectIds.join(',')})`);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -522,17 +551,27 @@ export function useCreateComment() {
 
 // Activities hooks
 export function useActivities(projectId?: string) {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   
   return useQuery({
-    queryKey: ['activities', projectId, isAdmin, user?.id],
+    queryKey: ['activities', projectId, user?.id],
     queryFn: async () => {
+      if (!user?.id) return [] as Activity[];
+
       let query = supabase.from('activities').select('*');
       
       if (projectId) {
+        const { data: membership, error: membershipError } = await supabase
+          .from('project_members')
+          .select('id')
+          .eq('project_id', projectId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (membershipError) throw membershipError;
+        if (!membership) return [] as Activity[];
         query = query.eq('project_id', projectId);
-      } else if (!isAdmin && user?.id) {
-        // Clients: only get activities from their projects
+      } else {
         const { data: memberships } = await supabase
           .from('project_members')
           .select('project_id')

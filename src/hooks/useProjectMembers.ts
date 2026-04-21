@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from './useProfiles';
+import type { AdminProfile } from './useAdminProfiles';
 
 export interface ProjectMember {
   id: string;
@@ -12,6 +13,10 @@ export interface ProjectMember {
 
 export interface ProjectMemberWithProfile extends ProjectMember {
   profile: Profile | null;
+}
+
+export interface InternalProjectMemberWithProfile extends ProjectMember {
+  profile: AdminProfile | null;
 }
 
 export function useProjectMembers(projectId?: string) {
@@ -63,6 +68,44 @@ export function useProjectMembersWithProfiles(projectId?: string) {
       })) as ProjectMemberWithProfile[];
     },
     enabled: !!projectId
+  });
+}
+
+export function useInternalProjectMembersWithProfiles(projectId?: string) {
+  return useQuery({
+    queryKey: ['project-internal-members-profiles', projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+
+      const { data: members, error: membersError } = await supabase
+        .from('project_members')
+        .select('*')
+        .eq('project_id', projectId)
+        .in('role', ['admin', 'dev']);
+
+      if (membersError) throw membersError;
+      if (!members || members.length === 0) return [];
+
+      const userIds = members.map((member) => member.user_id);
+      const [{ data: profiles, error: profilesError }, { data: roles, error: rolesError }] = await Promise.all([
+        supabase.from('profiles').select('*').in('user_id', userIds),
+        supabase.from('user_roles').select('user_id, role').in('user_id', userIds).in('role', ['admin', 'dev']),
+      ]);
+
+      if (profilesError) throw profilesError;
+      if (rolesError) throw rolesError;
+
+      return members.map((member) => ({
+        ...member,
+        profile: profiles
+          ?.map((profile) => ({
+            ...profile,
+            role: roles?.find((role) => role.user_id === profile.user_id)?.role || 'dev',
+          }))
+          .find((profile) => profile.user_id === member.user_id) || null,
+      })) as InternalProjectMemberWithProfile[];
+    },
+    enabled: !!projectId,
   });
 }
 
@@ -187,5 +230,62 @@ export function useSetProjectMembers() {
       queryClient.invalidateQueries({ queryKey: ['user-projects'] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     }
+  });
+}
+
+export function useSetInternalProjectMembers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ projectId, members }: { projectId: string; members: Array<{ userId: string; role: 'admin' | 'dev' }> }) => {
+      const { data: currentMembers, error: fetchError } = await supabase
+        .from('project_members')
+        .select('user_id, role')
+        .eq('project_id', projectId)
+        .in('role', ['admin', 'dev']);
+
+      if (fetchError) throw fetchError;
+
+      const currentUserIds = currentMembers?.map((member) => member.user_id) || [];
+      const nextUserIds = members.map((member) => member.userId);
+      const toRemove = currentUserIds.filter((userId) => !nextUserIds.includes(userId));
+
+      if (toRemove.length > 0) {
+        const { error: removeError } = await supabase
+          .from('project_members')
+          .delete()
+          .eq('project_id', projectId)
+          .in('user_id', toRemove)
+          .in('role', ['admin', 'dev']);
+
+        if (removeError) throw removeError;
+      }
+
+      for (const member of members) {
+        const { error: upsertError } = await supabase
+          .from('project_members')
+          .upsert(
+            {
+              project_id: projectId,
+              user_id: member.userId,
+              role: member.role,
+            },
+            { onConflict: 'project_id,user_id' },
+          );
+
+        if (upsertError) throw upsertError;
+      }
+
+      return { removed: toRemove, assigned: nextUserIds };
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['project-internal-members-profiles', variables.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project-members', variables.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project-members-profiles', variables.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+    },
   });
 }

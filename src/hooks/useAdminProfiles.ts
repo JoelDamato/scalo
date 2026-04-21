@@ -10,29 +10,30 @@ export function useAdminProfiles() {
   return useQuery({
     queryKey: ['admin-profiles'],
     queryFn: async () => {
-      // First get all internal team user_ids from user_roles
-      const { data: adminRoles, error: rolesError } = await supabase
+      const { data: internalRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id')
+        .select('user_id, role')
         .in('role', ['admin', 'dev']);
       
       if (rolesError) throw rolesError;
       
-      if (!adminRoles || adminRoles.length === 0) {
+      if (!internalRoles || internalRoles.length === 0) {
         return [];
       }
       
-      const adminUserIds = adminRoles.map(r => r.user_id);
+      const internalUserIds = internalRoles.map((item) => item.user_id);
       
-      // Then get profiles for those internal users
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_id', adminUserIds);
+        .in('user_id', internalUserIds);
       
       if (profilesError) throw profilesError;
       
-      return profiles as Profile[];
+      return (profiles || []).map((profile) => ({
+        ...profile,
+        role: internalRoles.find((item) => item.user_id === profile.user_id)?.role || 'dev',
+      })) as AdminProfile[];
     }
   });
 }

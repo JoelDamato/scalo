@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useProfiles, Profile } from '@/hooks/useProfiles';
-import { useProjectMembersWithProfiles, useSetProjectMembers } from '@/hooks/useProjectMembers';
+import { useAdminProfiles } from '@/hooks/useAdminProfiles';
+import { useInternalProjectMembersWithProfiles, useSetInternalProjectMembers } from '@/hooks/useProjectMembers';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -16,13 +16,9 @@ interface ProjectMembersSelectorProps {
 }
 
 export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSelectorProps) {
-  const { data: allProfiles = [] } = useProfiles();
-  const { data: members = [], isLoading } = useProjectMembersWithProfiles(projectId);
-  const setMembers = useSetProjectMembers();
-  
-  // Get client profiles only (those without admin role - we'll filter by checking if they're NOT admins)
-  // For now, show all profiles but prefer filtering
-  const clientProfiles = allProfiles;
+  const { data: internalProfiles = [] } = useAdminProfiles();
+  const { data: members = [], isLoading } = useInternalProjectMembersWithProfiles(projectId);
+  const setMembers = useSetInternalProjectMembers();
   
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -44,11 +40,17 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
   
   const handleSave = async () => {
     try {
-      await setMembers.mutateAsync({ projectId, userIds: selectedUserIds });
-      toast.success('Miembros actualizados');
+      await setMembers.mutateAsync({
+        projectId,
+        members: selectedUserIds.map((userId) => ({
+          userId,
+          role: internalProfiles.find((profile) => profile.user_id === userId)?.role || 'dev',
+        })),
+      });
+      toast.success('Equipo asignado actualizado');
       setIsEditing(false);
     } catch (error) {
-      toast.error('Error al actualizar miembros');
+      toast.error('Error al actualizar el equipo');
     }
   };
   
@@ -67,7 +69,7 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Personas vinculadas a este proyecto
+            Equipo interno con acceso a este proyecto
           </p>
           {isAdmin && (
             <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
@@ -79,7 +81,7 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
         {members.length === 0 ? (
           <div className="text-center py-6 bg-muted/30 rounded-lg">
             <Users className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-            <p className="text-sm text-muted-foreground">Sin miembros asignados</p>
+            <p className="text-sm text-muted-foreground">Sin personal asignado</p>
             {isAdmin && (
               <Button 
                 variant="outline" 
@@ -87,7 +89,7 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
                 className="mt-3"
                 onClick={() => setIsEditing(true)}
               >
-                Agregar miembros
+                Asignar equipo
               </Button>
             )}
           </div>
@@ -115,7 +117,7 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
                   )}
                 </div>
                 <Badge variant="secondary" className="text-xs">
-                  {member.role === 'client' ? 'Cliente' : member.role}
+                  {member.role === 'admin' ? 'Admin' : 'Dev'}
                 </Badge>
               </div>
             ))}
@@ -129,7 +131,7 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Seleccionar miembros</p>
+        <p className="text-sm font-medium">Seleccionar equipo interno</p>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={handleCancel}>
             <X className="h-4 w-4 mr-1" />
@@ -148,12 +150,12 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
       
       <ScrollArea className="h-64 rounded-lg border">
         <div className="p-2 space-y-1">
-          {clientProfiles.length === 0 ? (
+          {internalProfiles.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               No hay usuarios disponibles
             </p>
           ) : (
-            clientProfiles.map(profile => {
+            internalProfiles.map(profile => {
               const isSelected = selectedUserIds.includes(profile.user_id);
               
               return (
@@ -180,6 +182,9 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
                     <p className="text-sm font-medium truncate">{profile.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
                   </div>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {profile.role === 'admin' ? 'Admin' : 'Dev'}
+                  </Badge>
                 </label>
               );
             })
@@ -188,7 +193,7 @@ export function ProjectMembersSelector({ projectId, isAdmin }: ProjectMembersSel
       </ScrollArea>
       
       <p className="text-xs text-muted-foreground">
-        {selectedUserIds.length} seleccionado{selectedUserIds.length !== 1 ? 's' : ''}
+        {selectedUserIds.length} persona{selectedUserIds.length !== 1 ? 's' : ''} con acceso
       </p>
     </div>
   );
