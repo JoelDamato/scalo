@@ -61,6 +61,112 @@ export interface Activity {
   user?: Profile;
 }
 
+export interface TaskAttachment {
+  id: string;
+  task_id: string;
+  uploaded_by: string;
+  file_path: string;
+  file_name: string;
+  content_type: string;
+  file_size: number;
+  created_at: string;
+  signed_url?: string | null;
+}
+
+export const TASK_ATTACHMENTS_BUCKET = 'task-attachments';
+export const MAX_TASK_IMAGE_SIZE = 10 * 1024 * 1024;
+
+function validateTaskImage(file: File) {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Solo se pueden adjuntar imágenes');
+  }
+
+  if (file.size > MAX_TASK_IMAGE_SIZE) {
+    throw new Error('Cada imagen debe pesar menos de 10 MB');
+  }
+}
+
+export async function getTaskAttachmentUrl(path: string) {
+  const { data, error } = await supabase.storage
+    .from(TASK_ATTACHMENTS_BUCKET)
+    .createSignedUrl(path, 60 * 60);
+
+  if (error) {
+    console.error('Error creating signed URL for task attachment:', error);
+    return null;
+  }
+
+  return data.signedUrl;
+}
+
+async function uploadTaskImageAttachment(file: File, userId: string, taskId: string) {
+  validateTaskImage(file);
+
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const filePath = `${userId}/${taskId}/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+
+  const { error } = await supabase.storage
+    .from(TASK_ATTACHMENTS_BUCKET)
+    .upload(filePath, file, {
+      upsert: false,
+      contentType: file.type,
+    });
+
+  if (error) throw error;
+
+  return {
+    file_path: filePath,
+    file_name: file.name,
+    content_type: file.type,
+    file_size: file.size,
+  };
+}
+
+async function createTaskImageAttachments({
+  taskId,
+  files = [],
+  userId,
+}: {
+  taskId: string;
+  files?: File[];
+  userId: string;
+}) {
+  if (files.length === 0) return [];
+
+  const uploadedFiles: Awaited<ReturnType<typeof uploadTaskImageAttachment>>[] = [];
+
+  try {
+    for (const file of files) {
+      uploadedFiles.push(await uploadTaskImageAttachment(file, userId, taskId));
+    }
+
+    const { data, error } = await supabase
+      .from('task_attachments')
+      .insert(
+        uploadedFiles.map((file) => ({
+          task_id: taskId,
+          uploaded_by: userId,
+          file_path: file.file_path,
+          file_name: file.file_name,
+          content_type: file.content_type,
+          file_size: file.file_size,
+        })),
+      )
+      .select('*');
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    if (uploadedFiles.length > 0) {
+      await supabase.storage
+        .from(TASK_ATTACHMENTS_BUCKET)
+        .remove(uploadedFiles.map((file) => file.file_path));
+    }
+
+    throw error;
+  }
+}
+
 // Projects hooks
 export function useProjects() {
   const { user, isAdmin } = useAuth();
@@ -208,10 +314,11 @@ export function useCreateTask() {
   const { user, role } = useAuth();
   
   return useMutation({
-    mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean }) => {
+    mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean; images?: File[] }) => {
+      const { images = [], ...taskPayload } = task;
       const taskToCreate = {
-        ...task,
-        assignee_id: role !== 'admin' && user?.id && !task.assignee_id ? user.id : task.assignee_id,
+        ...taskPayload,
+        assignee_id: role !== 'admin' && user?.id && !taskPayload.assignee_id ? user.id : taskPayload.assignee_id,
       };
 
       const { data, error } = await supabase
@@ -221,6 +328,19 @@ export function useCreateTask() {
         .single();
       
       if (error) throw error;
+
+      if (images.length > 0) {
+        if (!user?.id) {
+          throw new Error('Debes iniciar sesión');
+        }
+
+        await createTaskImageAttachments({
+          taskId: data.id,
+          files: images,
+          userId: user.id,
+        });
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -249,6 +369,52 @@ export function useUpdateTask() {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
     }
+  });
+}
+
+export function useTaskAttachments(taskId: string) {
+  return useQuery({
+    queryKey: ['task-attachments', taskId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('task_attachments')
+        .select('*')
+        .eq('task_id', taskId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const attachments = await Promise.all(
+        (data || []).map(async (attachment) => ({
+          ...(attachment as TaskAttachment),
+          signed_url: await getTaskAttachmentUrl(attachment.file_path),
+        })),
+      );
+
+      return attachments;
+    },
+    enabled: !!taskId,
+  });
+}
+
+export function useAddTaskAttachments() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ taskId, images }: { taskId: string; images: File[] }) => {
+      if (!user?.id) throw new Error('Debes iniciar sesión');
+      if (images.length === 0) return [];
+
+      return createTaskImageAttachments({
+        taskId,
+        files: images,
+        userId: user.id,
+      });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['task-attachments', variables.taskId] });
+    },
   });
 }
 

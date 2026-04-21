@@ -1,5 +1,15 @@
 import { forwardRef, useState, useEffect } from 'react';
-import { Task, useComments, useCreateComment, useUpdateTask, useDeleteTask } from '@/hooks/useData';
+import {
+  MAX_TASK_IMAGE_SIZE,
+  Task,
+  TaskAttachment,
+  useAddTaskAttachments,
+  useComments,
+  useCreateComment,
+  useDeleteTask,
+  useTaskAttachments,
+  useUpdateTask,
+} from '@/hooks/useData';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAdminProfiles } from '@/hooks/useAdminProfiles';
@@ -32,7 +42,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Send, Pencil, Trash2, X, Check, Users, CalendarClock } from 'lucide-react';
+import { Send, Pencil, Trash2, X, Check, Users, CalendarClock, ImageIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -44,6 +54,41 @@ interface TaskDetailSheetProps {
   task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function TaskAttachmentGallery({ attachments }: { attachments: TaskAttachment[] }) {
+  if (attachments.length === 0) return null;
+
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {attachments.map((attachment) => (
+        <a
+          key={attachment.id}
+          href={attachment.signed_url || undefined}
+          target={attachment.signed_url ? '_blank' : undefined}
+          rel="noreferrer"
+          className="group overflow-hidden rounded-lg border border-border/70 bg-muted/20 transition hover:border-primary/40"
+        >
+          {attachment.signed_url ? (
+            <img
+              src={attachment.signed_url}
+              alt={attachment.file_name}
+              className="aspect-video w-full object-cover transition group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex aspect-video items-center justify-center text-muted-foreground">
+              <ImageIcon className="h-6 w-6" />
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-muted-foreground">
+            <ImageIcon className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{attachment.file_name}</span>
+          </div>
+        </a>
+      ))}
+    </div>
+  );
 }
 
 export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
@@ -59,11 +104,14 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
     const [editScheduledTime, setEditScheduledTime] = useState('');
     const [editScheduledEndTime, setEditScheduledEndTime] = useState('');
     const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+    const [taskImages, setTaskImages] = useState<File[]>([]);
     
     const { data: comments = [] } = useComments(task?.id || '');
     const { data: profiles = [] } = useProfiles();
     const { data: adminProfiles = [] } = useAdminProfiles();
     const { data: assignees = [] } = useTaskAssignees(task?.id);
+    const { data: attachments = [] } = useTaskAttachments(task?.id || '');
+    const addTaskAttachments = useAddTaskAttachments();
     const createComment = useCreateComment();
     const updateTask = useUpdateTask();
     const googleCalendarStatus = useGoogleCalendarStatus();
@@ -79,6 +127,12 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
         setSelectedAssignees(assignees.map(a => a.user_id));
       }
     }, [task, task?.id, assignees]);
+
+    useEffect(() => {
+      if (open) {
+        setTaskImages([]);
+      }
+    }, [open, task?.id]);
 
     if (!task) return null;
 
@@ -211,6 +265,53 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
 
     const isAssignedToCurrentUser = !!user?.id && assignees.some((assignee) => assignee.user_id === user.id);
 
+    const validateSelectedImages = (files: File[]) => {
+      const invalidFile = files.find((file) => !file.type.startsWith('image/'));
+      if (invalidFile) {
+        toast.error('Solo podés adjuntar imágenes');
+        return false;
+      }
+
+      const oversizedFile = files.find((file) => file.size > MAX_TASK_IMAGE_SIZE);
+      if (oversizedFile) {
+        toast.error('Cada imagen debe pesar menos de 10 MB');
+        return false;
+      }
+
+      return true;
+    };
+
+    const handleTaskImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+
+      if (!validateSelectedImages(files)) {
+        event.target.value = '';
+        return;
+      }
+
+      setTaskImages((current) => [...current, ...files]);
+      event.target.value = '';
+    };
+
+    const removeTaskImage = (index: number) => {
+      setTaskImages((current) => current.filter((_, currentIndex) => currentIndex !== index));
+    };
+
+    const handleAddTaskImages = async () => {
+      if (taskImages.length === 0) return;
+
+      try {
+        await addTaskAttachments.mutateAsync({
+          taskId: task.id,
+          images: taskImages,
+        });
+        setTaskImages([]);
+        toast.success('Imágenes agregadas a la tarea');
+      } catch {
+        toast.error('Error al subir imágenes');
+      }
+    };
+
     const handleAssignToMe = async () => {
       if (!user?.id) return;
 
@@ -309,6 +410,53 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
                   {task.description || <span className="text-muted-foreground italic">Sin descripción</span>}
                 </p>
               )}
+            </div>
+
+            <div>
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                Imágenes
+              </h4>
+              <TaskAttachmentGallery attachments={attachments} />
+              <div className="mt-3 space-y-2 rounded-lg border border-border/70 bg-muted/20 p-3">
+                <Label className="text-xs text-muted-foreground">Agregar imágenes a la tarea</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleTaskImageChange}
+                />
+                {taskImages.length > 0 && (
+                  <div className="space-y-2">
+                    {taskImages.map((image, index) => (
+                      <div key={`${image.name}-${index}`} className="flex items-center justify-between gap-3 text-sm">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{image.name}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0"
+                          onClick={() => removeTaskImage(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={handleAddTaskImages}
+                      disabled={addTaskAttachments.isPending}
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                      {addTaskAttachments.isPending ? 'Subiendo...' : 'Guardar imágenes'}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Assignees Section */}

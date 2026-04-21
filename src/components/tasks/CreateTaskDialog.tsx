@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ImageIcon, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCreateTask } from '@/hooks/useData';
+import { MAX_TASK_IMAGE_SIZE, useCreateTask } from '@/hooks/useData';
 import { useProjects } from '@/hooks/useData';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -46,6 +47,7 @@ export function CreateTaskDialog({
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [scheduledEndTime, setScheduledEndTime] = useState('');
+  const [images, setImages] = useState<File[]>([]);
 
   const { data: projects = [] } = useProjects();
   const createTask = useCreateTask();
@@ -63,8 +65,34 @@ export function CreateTaskDialog({
       setScheduledDate('');
       setScheduledTime('');
       setScheduledEndTime('');
+      setImages([]);
     }
   }, [open, defaultStatus, defaultProjectId]);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const invalidFile = files.find((file) => !file.type.startsWith('image/'));
+
+    if (invalidFile) {
+      toast.error('Solo podés adjuntar imágenes');
+      event.target.value = '';
+      return;
+    }
+
+    const oversizedFile = files.find((file) => file.size > MAX_TASK_IMAGE_SIZE);
+    if (oversizedFile) {
+      toast.error('Cada imagen debe pesar menos de 10 MB');
+      event.target.value = '';
+      return;
+    }
+
+    setImages((current) => [...current, ...files]);
+    event.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setImages((current) => current.filter((_, currentIndex) => currentIndex !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +117,7 @@ export function CreateTaskDialog({
         scheduled_date: scheduledDate || null,
         scheduled_time: scheduledTime || null,
         scheduled_end_time: scheduledEndTime || null,
+        images,
         is_client_visible: !isInternal, // Internal tasks are not client visible
         client_input_required: false,
         assignee_id: assignToCurrentUser ? user?.id : undefined,
@@ -101,6 +130,7 @@ export function CreateTaskDialog({
       setScheduledDate('');
       setScheduledTime('');
       setScheduledEndTime('');
+      setImages([]);
       if (!defaultProjectId) setProjectId('');
     } catch (error) {
       toast.error('Error al crear la tarea');
@@ -195,6 +225,38 @@ export function CreateTaskDialog({
                 aria-label="Hora de fin"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="task-images">Imágenes</Label>
+            <Input
+              id="task-images"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+            />
+            {images.length > 0 && (
+              <div className="space-y-2 rounded-lg border border-border/70 bg-muted/20 p-3">
+                {images.map((image, index) => (
+                  <div key={`${image.name}-${index}`} className="flex items-center justify-between gap-3 text-sm">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{image.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0"
+                      onClick={() => removeImage(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           <DialogFooter>
