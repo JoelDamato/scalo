@@ -21,6 +21,7 @@ import Support from "./pages/Support";
 import Reports from "./pages/Reports";
 import WebhookDocs from "./pages/WebhookDocs";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
+import CalendarPage from "./pages/Calendar";
 import ProjectOnboarding from "./pages/ProjectOnboarding";
 
 import Resources from "./pages/Resources";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/projects/:id/initiatives/:initiativeId" element={<ProtectedRoute><InitiativeDetail /></ProtectedRoute>} />
               <Route path="/tasks" element={<Navigate to="/my-tasks" replace />} />
               <Route path="/my-tasks" element={<ProtectedRoute adminOnly><MyTasks /></ProtectedRoute>} />
+              <Route path="/calendar" element={<ProtectedRoute adminOnly><CalendarPage /></ProtectedRoute>} />
               <Route path="/activity" element={<Navigate to="/dashboard" replace />} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/finance" element={<ProtectedRoute financeOnly><Finance /></ProtectedRoute>} />
