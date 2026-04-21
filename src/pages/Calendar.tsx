@@ -362,30 +362,24 @@ export default function CalendarPage() {
                     onDragEnd={() => setDraggedTaskId(null)}
                     onClick={() => setSelectedTask(task)}
                     className={cn(
-                      'flex min-h-16 w-full items-start gap-2.5 rounded-lg border border-border/70 bg-card px-2.5 py-2.5 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-muted/30 sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)] xl:w-[calc(20%-0.6rem)]',
+                      'flex min-h-12 w-full items-start gap-2 rounded-lg border border-border/70 bg-card px-2 py-2 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-muted/30 sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)] xl:w-[calc(16.666%-0.625rem)]',
                       draggedTaskId === task.id && 'border-primary/50 opacity-70',
                     )}
                   >
                     <span className="rounded-md bg-muted p-1 text-muted-foreground">
                       <GripVertical className="h-3.5 w-3.5" />
                     </span>
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex min-w-0 items-center gap-1.5">
                         {task.project_id ? (
-                          <Badge variant="outline" className="max-w-full truncate text-[10px]">
+                          <Badge variant="outline" className="max-w-full truncate px-1.5 py-0 text-[10px]">
                             {projectById.get(task.project_id)?.name || 'Proyecto'}
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-[10px]">Interna</Badge>
+                          <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">Interna</Badge>
                         )}
-                        <StatusBadge status={task.status} className="text-[10px]" />
                       </div>
-                      <p className="line-clamp-2 text-xs font-medium leading-snug">{task.title}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {task.scheduled_date
-                          ? `Programada para ${task.scheduled_date}${task.scheduled_time ? ` · ${task.scheduled_time.slice(0, 5)}` : ''}`
-                          : 'Todavía sin fecha'}
-                      </p>
+                      <p className="line-clamp-2 text-[11px] font-medium leading-snug">{task.title}</p>
                     </div>
                   </button>
                 ))}
