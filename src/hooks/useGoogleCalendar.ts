@@ -224,8 +224,10 @@ export function useGoogleCalendarSync(sourceType: 'task' | 'project_event') {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-status'] });
       queryClient.invalidateQueries({ queryKey: ['google-calendar-syncs'] });
+      queryClient.invalidateQueries({ queryKey: ['google-calendar-availability'] });
       if (sourceType === 'task') {
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
       } else {
         queryClient.invalidateQueries({ queryKey: ['project-events'] });
       }

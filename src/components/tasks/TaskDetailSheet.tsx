@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { TaskChecklist } from './TaskChecklist';
 import { GoogleCalendarSyncButton } from '@/components/google/GoogleCalendarSyncButton';
+import { useGoogleCalendarStatus, useGoogleCalendarSync } from '@/hooks/useGoogleCalendar';
 
 interface TaskDetailSheetProps {
   task: Task | null;
@@ -65,6 +66,8 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
     const { data: assignees = [] } = useTaskAssignees(task?.id);
     const createComment = useCreateComment();
     const updateTask = useUpdateTask();
+    const googleCalendarStatus = useGoogleCalendarStatus();
+    const syncTaskToGoogle = useGoogleCalendarSync('task');
     const deleteTask = useDeleteTask();
     const setAssignees = useSetTaskAssignees();
     const { sendMentionNotifications } = useMentionNotifications();
@@ -75,7 +78,7 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
       if (task && assignees) {
         setSelectedAssignees(assignees.map(a => a.user_id));
       }
-    }, [task?.id, assignees]);
+    }, [task, task?.id, assignees]);
 
     if (!task) return null;
 
@@ -115,6 +118,21 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
             scheduled_end_time: editScheduledEndTime || null,
           }
         });
+
+        if (googleCalendarStatus.data?.connected) {
+          if (editScheduledDate) {
+            await syncTaskToGoogle.mutateAsync({
+              sourceId: task.id,
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            });
+          } else {
+            await syncTaskToGoogle.mutateAsync({
+              sourceId: task.id,
+              action: 'remove',
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            });
+          }
+        }
         
         // Update assignees and send notifications for new ones
         const currentAssigneeIds = assignees.map(a => a.user_id);

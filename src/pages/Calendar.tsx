@@ -39,6 +39,7 @@ import {
   useGoogleCalendarAvailability,
   useGoogleCalendarConnect,
   useGoogleCalendarDisconnect,
+  useGoogleCalendarSync,
   useGoogleCalendarStatus,
   type GoogleCalendarAvailabilityEvent,
 } from '@/hooks/useGoogleCalendar';
@@ -66,6 +67,23 @@ function parseGoogleEventDate(value: string | null) {
 
 function formatHourRange(start: Date, end: Date) {
   return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+}
+
+function getSuggestedTimeRange(date: Date, events: GoogleCalendarAvailabilityEvent[]) {
+  const slots = getAvailabilitySlots(date, events);
+  const firstSlot = slots[0];
+
+  if (!firstSlot) {
+    return { scheduled_time: null, scheduled_end_time: null };
+  }
+
+  const end = new Date(firstSlot.start.getTime() + 60 * 60 * 1000);
+  const boundedEnd = end > firstSlot.end ? firstSlot.end : end;
+
+  return {
+    scheduled_time: format(firstSlot.start, 'HH:mm'),
+    scheduled_end_time: format(boundedEnd, 'HH:mm'),
+  };
 }
 
 function getAvailabilitySlots(date: Date, events: GoogleCalendarAvailabilityEvent[]) {
@@ -127,6 +145,7 @@ export default function CalendarPage() {
   const googleCalendarStatus = useGoogleCalendarStatus();
   const connectGoogleCalendar = useGoogleCalendarConnect();
   const disconnectGoogleCalendar = useGoogleCalendarDisconnect();
+  const syncTaskToGoogle = useGoogleCalendarSync('task');
 
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -236,14 +255,37 @@ export default function CalendarPage() {
     if (!task) return;
 
     const nextDate = format(date, 'yyyy-MM-dd');
+    const nextDateEvents = googleEventsByDate.get(nextDate) || [];
+    const shouldUseAvailability = !!googleCalendarStatus.data?.connected;
+    const suggestedTimeRange = shouldUseAvailability
+      ? getSuggestedTimeRange(date, nextDateEvents)
+      : { scheduled_time: task.scheduled_time, scheduled_end_time: task.scheduled_end_time };
 
     try {
       await updateTask.mutateAsync({
         taskId,
-        updates: { scheduled_date: nextDate },
+        updates: {
+          scheduled_date: nextDate,
+          scheduled_time: suggestedTimeRange.scheduled_time,
+          scheduled_end_time: suggestedTimeRange.scheduled_end_time,
+        },
       });
+
+      if (googleCalendarStatus.data?.connected) {
+        await syncTaskToGoogle.mutateAsync({
+          sourceId: taskId,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+      }
+
       setSelectedDate(date);
-      toast.success(`"${task.title}" quedó para el ${format(date, "d 'de' MMMM", { locale: es })}`);
+      if (googleCalendarStatus.data?.connected && suggestedTimeRange.scheduled_time) {
+        toast.success(
+          `"${task.title}" quedó para el ${format(date, "d 'de' MMMM", { locale: es })} a las ${suggestedTimeRange.scheduled_time}`,
+        );
+      } else {
+        toast.success(`"${task.title}" quedó para el ${format(date, "d 'de' MMMM", { locale: es })}`);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No pude mover la tarea');
     } finally {
@@ -257,6 +299,13 @@ export default function CalendarPage() {
         taskId: task.id,
         updates: { scheduled_date: null, scheduled_time: null, scheduled_end_time: null },
       });
+      if (googleCalendarStatus.data?.connected) {
+        await syncTaskToGoogle.mutateAsync({
+          sourceId: task.id,
+          action: 'remove',
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+      }
       toast.success('La tarea volvió a quedar sin fecha');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No pude quitar la fecha');
@@ -466,7 +515,8 @@ export default function CalendarPage() {
                         'min-h-28 rounded-lg border p-2 text-left transition-colors sm:min-h-32',
                         isCurrentMonth ? 'border-border/70 bg-card hover:bg-muted/20' : 'border-border/40 bg-muted/20 text-muted-foreground/70',
                         isSelected && 'border-primary ring-2 ring-primary/10',
-                        isDropActive && 'hover:border-primary/60',
+                        isDropActive && 'hover:border-primary/60 hover:bg-primary/5',
+                        draggedTaskId && 'will-change-transform',
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
