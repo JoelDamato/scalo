@@ -169,12 +169,22 @@ async function createTaskImageAttachments({
 
 // Projects hooks
 export function useProjects() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   
   return useQuery({
-    queryKey: ['projects', user?.id],
+    queryKey: ['projects', role, user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+
+      if (role === 'admin') {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+        return data as Project[];
+      }
 
       const { data: memberships, error: membershipError } = await supabase
         .from('project_members')
@@ -200,14 +210,25 @@ export function useProjects() {
 }
 
 export function useProject(id: string) {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   return useQuery({
-    queryKey: ['projects', id, user?.id],
+    queryKey: ['projects', id, role, user?.id],
     queryFn: async () => {
       if (!id) return null;
 
       if (!user?.id) return null;
+
+      if (role === 'admin') {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (error) throw error;
+        return data as Project | null;
+      }
 
       const { data: membership, error: membershipError } = await supabase
         .from('project_members')
@@ -272,10 +293,10 @@ export function useCreateProject() {
 // Tasks hooks
 // projectId: specific project | 'internal' for tasks without project | undefined for all
 export function useTasks(projectId?: string | 'internal') {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   
   return useQuery({
-    queryKey: ['tasks', projectId, user?.id],
+    queryKey: ['tasks', projectId, role, user?.id],
     queryFn: async () => {
       if (!user?.id) return [] as Task[];
 
@@ -284,6 +305,9 @@ export function useTasks(projectId?: string | 'internal') {
       if (projectId === 'internal') {
         query = query.is('project_id', null);
       } else if (projectId) {
+        if (role === 'admin') {
+          query = query.eq('project_id', projectId);
+        } else {
         const { data: membership, error: membershipError } = await supabase
           .from('project_members')
           .select('id')
@@ -294,7 +318,15 @@ export function useTasks(projectId?: string | 'internal') {
         if (membershipError) throw membershipError;
         if (!membership) return [] as Task[];
         query = query.eq('project_id', projectId);
+        }
       } else {
+        if (role === 'admin') {
+          const { data, error } = await query.order('created_at', { ascending: false });
+
+          if (error) throw error;
+          return data as Task[];
+        }
+
         const { data: memberships } = await supabase
           .from('project_members')
           .select('project_id')
@@ -551,16 +583,19 @@ export function useCreateComment() {
 
 // Activities hooks
 export function useActivities(projectId?: string) {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   
   return useQuery({
-    queryKey: ['activities', projectId, user?.id],
+    queryKey: ['activities', projectId, role, user?.id],
     queryFn: async () => {
       if (!user?.id) return [] as Activity[];
 
       let query = supabase.from('activities').select('*');
       
       if (projectId) {
+        if (role === 'admin') {
+          query = query.eq('project_id', projectId);
+        } else {
         const { data: membership, error: membershipError } = await supabase
           .from('project_members')
           .select('id')
@@ -571,7 +606,17 @@ export function useActivities(projectId?: string) {
         if (membershipError) throw membershipError;
         if (!membership) return [] as Activity[];
         query = query.eq('project_id', projectId);
+        }
       } else {
+        if (role === 'admin') {
+          const { data, error } = await query
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+          if (error) throw error;
+          return data as Activity[];
+        }
+
         const { data: memberships } = await supabase
           .from('project_members')
           .select('project_id')
