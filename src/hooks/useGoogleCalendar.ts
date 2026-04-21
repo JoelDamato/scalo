@@ -113,6 +113,7 @@ async function invokeGoogleCalendarFunction<T>(
     headers: {
       ...(options?.headers || {}),
       Authorization: `Bearer ${accessToken}`,
+      'X-App-Origin': window.location.origin,
     },
   });
 

@@ -55,10 +55,16 @@ export function getServiceRoleClient() {
 export function getGoogleOAuthConfig(originHeader: string | null) {
   const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
   const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
+  const extraAllowedOrigins = (Deno.env.get("GOOGLE_ALLOWED_ORIGINS") || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
   const allowedOrigins = new Set([
     "http://localhost:8080",
     "https://scalo.tech",
     "https://www.scalo.tech",
+    "https://portal-scalo.vercel.app",
+    ...extraAllowedOrigins,
   ]);
   const normalizedOrigin = originHeader?.replace(/\/$/, "");
   const originRedirectUri =
@@ -74,6 +80,10 @@ export function getGoogleOAuthConfig(originHeader: string | null) {
   }
 
   return { clientId, clientSecret, redirectUri };
+}
+
+export function getGoogleRequestOrigin(req: Request) {
+  return req.headers.get("x-app-origin") || req.headers.get("origin");
 }
 
 export async function refreshGoogleAccessTokenIfNeeded(

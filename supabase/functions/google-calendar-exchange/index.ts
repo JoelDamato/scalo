@@ -3,6 +3,7 @@ import {
   corsHeaders,
   getAuthenticatedUser,
   getGoogleOAuthConfig,
+  getGoogleRequestOrigin,
   getServiceRoleClient,
 } from "../_shared/google-calendar.ts";
 
@@ -35,7 +36,7 @@ serve(async (req) => {
       throw new Error("La autorización expiró. Vuelve a intentar conectar Google Calendar.");
     }
 
-    const { clientId, clientSecret, redirectUri } = getGoogleOAuthConfig(req.headers.get("origin"));
+    const { clientId, clientSecret, redirectUri } = getGoogleOAuthConfig(getGoogleRequestOrigin(req));
 
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",

@@ -3,6 +3,7 @@ import {
   corsHeaders,
   getAuthenticatedUser,
   getGoogleOAuthConfig,
+  getGoogleRequestOrigin,
   getServiceRoleClient,
 } from "../_shared/google-calendar.ts";
 
@@ -14,7 +15,7 @@ serve(async (req) => {
   try {
     const user = await getAuthenticatedUser(req);
     const supabase = getServiceRoleClient();
-    const { clientId, redirectUri } = getGoogleOAuthConfig(req.headers.get("origin"));
+    const { clientId, redirectUri } = getGoogleOAuthConfig(getGoogleRequestOrigin(req));
 
     const state = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();

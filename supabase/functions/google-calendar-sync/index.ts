@@ -3,6 +3,7 @@ import {
   buildGoogleEventTimes,
   corsHeaders,
   getAuthenticatedUser,
+  getGoogleRequestOrigin,
   getServiceRoleClient,
   refreshGoogleAccessTokenIfNeeded,
 } from "../_shared/google-calendar.ts";
@@ -40,7 +41,7 @@ serve(async (req) => {
       throw new Error("Primero conecta tu Google Calendar");
     }
 
-    const accessToken = await refreshGoogleAccessTokenIfNeeded(supabase, connection, req.headers.get("origin"));
+    const accessToken = await refreshGoogleAccessTokenIfNeeded(supabase, connection, getGoogleRequestOrigin(req));
 
     const { data: existingSync } = await supabase
       .from("google_calendar_syncs")
