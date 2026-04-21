@@ -27,6 +27,20 @@ export interface GoogleCalendarSyncRow {
   updated_at: string;
 }
 
+export interface GoogleCalendarAvailabilityEvent {
+  id: string;
+  title: string;
+  start: string | null;
+  end: string | null;
+  all_day: boolean;
+  html_link: string | null;
+}
+
+export interface GoogleCalendarAvailabilityResponse {
+  connected: boolean;
+  events: GoogleCalendarAvailabilityEvent[];
+}
+
 const GOOGLE_CALENDAR_CONNECT_ERROR =
   'No pude iniciar la conexión con Google Calendar. Revisá que la sesión siga activa e intentá de nuevo.';
 const GOOGLE_CALENDAR_SESSION_ERROR =
@@ -133,6 +147,33 @@ export function useGoogleCalendarStatus() {
       return invokeGoogleCalendarFunction<GoogleCalendarConnectionStatus>('google-calendar-status');
     },
     enabled: !!user,
+    retry: false,
+  });
+}
+
+export function useGoogleCalendarAvailability({
+  start,
+  end,
+  enabled = true,
+}: {
+  start: string;
+  end: string;
+  enabled?: boolean;
+}) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['google-calendar-availability', user?.id, start, end],
+    queryFn: async () => {
+      return invokeGoogleCalendarFunction<GoogleCalendarAvailabilityResponse>(
+        'google-calendar-availability',
+        {
+          body: { start, end },
+        },
+        'No pude leer tu disponibilidad de Google Calendar.',
+      );
+    },
+    enabled: !!user && enabled,
     retry: false,
   });
 }
