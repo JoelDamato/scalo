@@ -50,6 +50,7 @@ import { TaskChecklist } from './TaskChecklist';
 import { GoogleCalendarSyncButton } from '@/components/google/GoogleCalendarSyncButton';
 import { useGoogleCalendarStatus, useGoogleCalendarSync } from '@/hooks/useGoogleCalendar';
 import { useWhatsAppTaskAssignmentNotification } from '@/hooks/useWhatsAppIntegration';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TaskDetailSheetProps {
   task: Task | null;
@@ -233,6 +234,27 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
       if (!newComment.trim()) return;
       
       createComment.mutate({ taskId: task.id, content: newComment.trim() });
+
+      const assignedUserIds = assignees.map((assignee) => assignee.user_id);
+      if (assignedUserIds.includes('378759b2-7f24-4523-893c-d23bd3213484') && user?.id !== '378759b2-7f24-4523-893c-d23bd3213484') {
+        try {
+          await supabase.functions.invoke('discord-dylan-notify', {
+            body: {
+              event_type: 'task_comment',
+              related_assignee_ids: assignedUserIds,
+              task_title: task.title,
+              comment: newComment.trim(),
+              link: `/my-tasks?task=${task.id}`,
+            },
+            headers: {
+              Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+              'X-App-Origin': window.location.origin,
+            },
+          });
+        } catch (error) {
+          console.error('Error sending Dylan Discord task comment notification:', error);
+        }
+      }
       
       // Send mention notifications
       await sendMentionNotifications(

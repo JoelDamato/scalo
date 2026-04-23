@@ -3,6 +3,35 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useEffect } from 'react';
 
+const DYLAN_USER_ID = '378759b2-7f24-4523-893c-d23bd3213484';
+
+async function sendDiscordDylanNotification(payload: {
+  event_type: 'assignment' | 'mention' | 'task_comment';
+  target_user_id?: string;
+  related_assignee_ids?: string[];
+  task_title: string;
+  project_name?: string;
+  comment?: string;
+  link?: string;
+}) {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error || !session?.access_token) {
+    throw new Error('No hay sesión activa para avisar a Discord');
+  }
+
+  await supabase.functions.invoke('discord-dylan-notify', {
+    body: payload,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      'X-App-Origin': window.location.origin,
+    },
+  });
+}
+
 export interface Notification {
   id: string;
   user_id: string;
@@ -199,6 +228,19 @@ export function useMentionNotifications() {
           task_id: context.taskId,
           project_id: context.projectId
         });
+
+        if (mentionedProfile.user_id === DYLAN_USER_ID) {
+          try {
+            await sendDiscordDylanNotification({
+              event_type: 'mention',
+              target_user_id: mentionedProfile.user_id,
+              task_title: context.contextName,
+              link: context.link ?? (context.taskId ? `/my-tasks?task=${context.taskId}` : undefined),
+            });
+          } catch (error) {
+            console.error('Error sending Dylan Discord mention notification:', error);
+          }
+        }
       }
     }
   };
@@ -228,6 +270,19 @@ export function useAssignmentNotifications() {
       task_id: taskId,
       project_id: projectId
     });
+
+    if (assignedUserId === DYLAN_USER_ID) {
+      try {
+        await sendDiscordDylanNotification({
+          event_type: 'assignment',
+          target_user_id: assignedUserId,
+          task_title: taskTitle,
+          link: `/my-tasks?task=${taskId}`,
+        });
+      } catch (error) {
+        console.error('Error sending Dylan Discord assignment notification:', error);
+      }
+    }
   };
 
   return { sendAssignmentNotification };
