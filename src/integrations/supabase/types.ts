@@ -1083,6 +1083,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          phone_number: string | null
           updated_at: string
           user_id: string
         }
@@ -1092,6 +1093,7 @@ export type Database = {
           email: string
           id?: string
           name: string
+          phone_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1101,6 +1103,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          phone_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2113,6 +2116,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      webhook_api_keys: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string
+        }
+        Relationships: []
       }
       whatsapp_conversations: {
         Row: {

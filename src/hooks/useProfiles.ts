@@ -8,6 +8,7 @@ export interface Profile {
   name: string;
   email: string;
   avatar_url: string | null;
+  phone_number: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,7 +56,7 @@ export function useUpdateProfile() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (updates: { name?: string; avatar_url?: string }) => {
+    mutationFn: async (updates: { name?: string; avatar_url?: string; phone_number?: string | null }) => {
       if (!user?.id) throw new Error('Not authenticated');
       
       const { data, error } = await supabase

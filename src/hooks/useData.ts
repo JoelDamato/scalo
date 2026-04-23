@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useWhatsAppTaskAssignmentNotification } from './useWhatsAppIntegration';
 
 export interface Project {
   id: string;
@@ -37,6 +38,7 @@ export interface Profile {
   user_id: string;
   name: string;
   email: string;
+  phone_number?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -373,6 +375,7 @@ export function useUpdateTaskStatus() {
 export function useCreateTask() {
   const queryClient = useQueryClient();
   const { user, role } = useAuth();
+  const notifyTaskAssignment = useWhatsAppTaskAssignmentNotification();
   
   return useMutation({
     mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean; images?: File[] }) => {
@@ -400,6 +403,17 @@ export function useCreateTask() {
           files: images,
           userId: user.id,
         });
+      }
+
+      if (data.assignee_id) {
+        try {
+          await notifyTaskAssignment.mutateAsync({
+            task_id: data.id,
+            assignee_user_id: data.assignee_id,
+          });
+        } catch (error) {
+          console.error('Error sending WhatsApp task assignment notification:', error);
+        }
       }
 
       return data;

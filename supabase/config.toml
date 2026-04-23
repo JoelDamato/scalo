@@ -23,3 +23,12 @@ verify_jwt = false
 
 [functions.system-webhook]
 verify_jwt = false
+
+[functions.whatsapp-admin]
+verify_jwt = false
+
+[functions.whatsapp-reminders]
+verify_jwt = false
+
+[functions.whatsapp-task-notify]
+verify_jwt = false

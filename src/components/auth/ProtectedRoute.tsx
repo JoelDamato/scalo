@@ -5,9 +5,10 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   adminOnly?: boolean;
   financeOnly?: boolean;
+  roleRequired?: 'admin' | 'dev' | 'client';
 }
 
-export function ProtectedRoute({ children, adminOnly = false, financeOnly = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, adminOnly = false, financeOnly = false, roleRequired }: ProtectedRouteProps) {
   const { user, loading, isAdmin, role, canAccessFinance } = useAuth();
 
   if (loading) {
@@ -36,6 +37,10 @@ export function ProtectedRoute({ children, adminOnly = false, financeOnly = fals
   }
 
   if (financeOnly && !canAccessFinance) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (roleRequired && role !== roleRequired) {
     return <Navigate to="/dashboard" replace />;
   }
 

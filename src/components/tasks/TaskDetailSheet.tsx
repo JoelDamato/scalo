@@ -49,6 +49,7 @@ import { cn } from '@/lib/utils';
 import { TaskChecklist } from './TaskChecklist';
 import { GoogleCalendarSyncButton } from '@/components/google/GoogleCalendarSyncButton';
 import { useGoogleCalendarStatus, useGoogleCalendarSync } from '@/hooks/useGoogleCalendar';
+import { useWhatsAppTaskAssignmentNotification } from '@/hooks/useWhatsAppIntegration';
 
 interface TaskDetailSheetProps {
   task: Task | null;
@@ -120,6 +121,7 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
     const setAssignees = useSetTaskAssignees();
     const { sendMentionNotifications } = useMentionNotifications();
     const { sendAssignmentNotification } = useAssignmentNotifications();
+    const sendWhatsAppAssignmentNotification = useWhatsAppTaskAssignmentNotification();
 
     // Sync assignees when task changes or editing starts
     useEffect(() => {
@@ -200,6 +202,14 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
         // Send notifications to newly assigned users
         for (const userId of newAssigneeIds) {
           await sendAssignmentNotification(userId, task.title, task.id, task.project_id);
+          try {
+            await sendWhatsAppAssignmentNotification.mutateAsync({
+              task_id: task.id,
+              assignee_user_id: userId,
+            });
+          } catch (error) {
+            console.error('Error sending WhatsApp assignment notification:', error);
+          }
         }
         
         toast.success('Tarea actualizada');

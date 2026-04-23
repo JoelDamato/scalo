@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
-import { Check, Copy, Eye, EyeOff, KeyRound, Loader2, Lock, Send, Webhook } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Check, Copy, Eye, EyeOff, KeyRound, Loader2, Lock, Send, Trash2, Webhook } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -105,6 +106,30 @@ function stringify(value: unknown) {
   return JSON.stringify(value, null, 2);
 }
 
+type WebhookApiKeyRow = {
+  id: string;
+  name: string;
+  token_prefix: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+};
+
+async function sha256Hex(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  const hashBuffer = await window.crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function generateWebhookToken() {
+  const randomBytes = new Uint8Array(24);
+  window.crypto.getRandomValues(randomBytes);
+  const suffix = Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `scalo_whk_${suffix}`;
+}
+
 function CodeBlock({ value, copyLabel = 'Copiar' }: { value: string; copyLabel?: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -141,9 +166,15 @@ export default function WebhookDocs() {
   const [isLoadingToken, setIsLoadingToken] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<unknown>(null);
+  const [apiKeys, setApiKeys] = useState<WebhookApiKeyRow[]>([]);
+  const [isLoadingApiKeys, setIsLoadingApiKeys] = useState(false);
+  const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
+  const [newApiKeyName, setNewApiKeyName] = useState('n8n principal');
+  const [freshApiKey, setFreshApiKey] = useState('');
+  const [showFreshApiKey, setShowFreshApiKey] = useState(false);
 
   const curlExample = useMemo(() => `curl -X POST '${endpointUrl}' \\
-  -H 'Authorization: Bearer <access_token>' \\
+  -H 'x-webhook-key: <webhook_api_key>' \\
   -H 'Content-Type: application/json' \\
   -d '${JSON.stringify(examples[0].body)}'`, []);
 
@@ -151,7 +182,28 @@ export default function WebhookDocs() {
     ? showToken
       ? sessionToken
       : `${sessionToken.slice(0, 24)}...${sessionToken.slice(-16)}`
-    : 'Cargá tu token de sesión para copiarlo.';
+      : 'Cargá tu token de sesión para copiarlo.';
+
+  const loadApiKeys = async () => {
+    setIsLoadingApiKeys(true);
+    try {
+      const { data, error } = await supabase
+        .from('webhook_api_keys')
+        .select('id, name, token_prefix, last_used_at, revoked_at, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setApiKeys((data || []) as WebhookApiKeyRow[]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No pude cargar las API keys');
+    } finally {
+      setIsLoadingApiKeys(false);
+    }
+  };
+
+  useEffect(() => {
+    loadApiKeys();
+  }, []);
 
   const loadSessionToken = async () => {
     setIsLoadingToken(true);
@@ -187,6 +239,72 @@ export default function WebhookDocs() {
       toast.success('Token copiado');
     } catch {
       toast.error('No pude copiar el token');
+    }
+  };
+
+  const createApiKey = async () => {
+    if (!newApiKeyName.trim()) {
+      toast.error('Poné un nombre para la API key');
+      return;
+    }
+
+    setIsCreatingApiKey(true);
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error('No pude validar tu sesión');
+      }
+
+      const rawToken = generateWebhookToken();
+      const tokenHash = await sha256Hex(rawToken);
+
+      const { error } = await supabase.from('webhook_api_keys').insert({
+        name: newApiKeyName.trim(),
+        token_prefix: rawToken.slice(0, 16),
+        token_hash: tokenHash,
+        created_by: user.id,
+      });
+
+      if (error) throw error;
+
+      setFreshApiKey(rawToken);
+      setShowFreshApiKey(true);
+      toast.success('API key creada');
+      setNewApiKeyName('n8n principal');
+      await loadApiKeys();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No pude crear la API key');
+    } finally {
+      setIsCreatingApiKey(false);
+    }
+  };
+
+  const revokeApiKey = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('webhook_api_keys')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('API key revocada');
+      await loadApiKeys();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No pude revocar la API key');
+    }
+  };
+
+  const copyFreshApiKey = async () => {
+    if (!freshApiKey) return;
+    try {
+      await navigator.clipboard.writeText(freshApiKey);
+      toast.success('API key copiada');
+    } catch {
+      toast.error('No pude copiar la API key');
     }
   };
 
@@ -267,7 +385,7 @@ export default function WebhookDocs() {
                   Autenticación
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Enviá el access token del usuario en `Authorization: Bearer`.
+                  Podés usar `x-webhook-key` estable o el `Authorization: Bearer` de tu sesión para tests.
                 </p>
               </div>
               <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
@@ -276,7 +394,7 @@ export default function WebhookDocs() {
                   Permisos
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Los clientes quedan bloqueados. Admin y dev pasan por RLS, así que el acceso sigue limitado.
+                  Las API keys se crean desde un admin y sirven para automatizaciones sin depender del vencimiento de la sesión.
                 </p>
               </div>
               <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
@@ -294,9 +412,89 @@ export default function WebhookDocs() {
 
         <Card>
           <CardHeader>
+            <CardTitle>API keys estables</CardTitle>
+            <CardDescription>
+              Estas llaves no dependen del vencimiento del JWT. Son la opción recomendada para n8n, Make y webhooks persistentes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-muted/20 p-3 sm:flex-row">
+              <Input
+                value={newApiKeyName}
+                onChange={(event) => setNewApiKeyName(event.target.value)}
+                placeholder="Nombre de la API key"
+              />
+              <Button type="button" onClick={createApiKey} disabled={isCreatingApiKey}>
+                {isCreatingApiKey ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                Crear API key
+              </Button>
+            </div>
+
+            {freshApiKey ? (
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+                <p className="text-sm font-medium">Copiala ahora</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Después solo queda guardado el hash. Si la perdés, generás otra.
+                </p>
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <code className="min-w-0 break-all text-xs text-muted-foreground">
+                    {showFreshApiKey ? freshApiKey : `${freshApiKey.slice(0, 16)}...${freshApiKey.slice(-8)}`}
+                  </code>
+                  <div className="flex shrink-0 gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setShowFreshApiKey((value) => !value)}>
+                      {showFreshApiKey ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                      {showFreshApiKey ? 'Ocultar' : 'Ver'}
+                    </Button>
+                    <Button type="button" size="sm" onClick={copyFreshApiKey}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copiar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              {isLoadingApiKeys ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cargando API keys...
+                </div>
+              ) : apiKeys.length === 0 ? (
+                <div className="rounded-lg border border-border/70 bg-muted/20 p-3 text-sm text-muted-foreground">
+                  Todavía no generaste ninguna API key.
+                </div>
+              ) : (
+                apiKeys.map((apiKey) => (
+                  <div key={apiKey.id} className="flex flex-col gap-3 rounded-lg border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{apiKey.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {apiKey.token_prefix}... · {apiKey.revoked_at ? 'Revocada' : apiKey.last_used_at ? `Último uso: ${new Date(apiKey.last_used_at).toLocaleString()}` : 'Sin uso todavía'}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => revokeApiKey(apiKey.id)}
+                      disabled={!!apiKey.revoked_at}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {apiKey.revoked_at ? 'Revocada' : 'Revocar'}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Token de mi sesión</CardTitle>
             <CardDescription>
-              Este es el access token del usuario logueado. Copialo para probar desde Postman, n8n, Make o cualquier automatización.
+              Este es el access token del usuario logueado. Úsalo para pruebas rápidas; para producción conviene una API key estable.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -346,7 +544,7 @@ export default function WebhookDocs() {
           <CardHeader>
             <CardTitle>Request base</CardTitle>
             <CardDescription>
-              El endpoint acepta `POST`. El token tiene que pertenecer a un usuario interno.
+              El endpoint acepta `POST`. Recomendado: `x-webhook-key`. También sigue aceptando `Authorization: Bearer`.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -404,7 +602,8 @@ export default function WebhookDocs() {
               value={stringify({
                 ok: true,
                 action: 'create_task',
-                role: 'dev',
+                role: 'admin',
+                auth_mode: 'api_key',
                 result: {
                   task: {
                     id: 'uuid-de-la-tarea',

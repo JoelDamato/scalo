@@ -22,6 +22,7 @@ import Reports from "./pages/Reports";
 import WebhookDocs from "./pages/WebhookDocs";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
 import CalendarPage from "./pages/Calendar";
+import WhatsAppPage from "./pages/WhatsApp";
 import ProjectOnboarding from "./pages/ProjectOnboarding";
 
 import Resources from "./pages/Resources";
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute adminOnly><Reports /></ProtectedRoute>} />
               <Route path="/webhooks" element={<ProtectedRoute adminOnly><WebhookDocs /></ProtectedRoute>} />
+              <Route path="/whatsapp" element={<ProtectedRoute roleRequired="admin"><WhatsAppPage /></ProtectedRoute>} />
               
               <Route path="/resources" element={<ProtectedRoute adminOnly><Resources /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />

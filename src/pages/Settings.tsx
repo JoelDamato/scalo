@@ -14,6 +14,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useGoogleCalendarConnect, useGoogleCalendarDisconnect, useGoogleCalendarStatus } from '@/hooks/useGoogleCalendar';
+import { useAdminProfiles } from '@/hooks/useAdminProfiles';
 import {
   Select,
   SelectContent,
@@ -23,17 +24,21 @@ import {
 } from '@/components/ui/select';
 
 export default function Settings() {
-  const { isAdmin } = useAuth();
+  const { role } = useAuth();
+  const isSystemAdmin = role === 'admin';
   const { data: profile } = useCurrentProfile();
   const updateProfile = useUpdateProfile();
   const [name, setName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserPhoneNumber, setNewUserPhoneNumber] = useState('');
   const [newUserRole, setNewUserRole] = useState<'admin' | 'dev' | 'client'>('client');
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const pushNotifications = usePushNotifications();
+  const { data: adminProfiles = [] } = useAdminProfiles();
   const googleCalendarStatus = useGoogleCalendarStatus();
   const connectGoogleCalendar = useGoogleCalendarConnect();
   const disconnectGoogleCalendar = useGoogleCalendarDisconnect();
@@ -43,18 +48,33 @@ export default function Settings() {
     if (profile?.name) {
       setName(profile.name);
     }
-  }, [profile?.name]);
+    setPhoneNumber(profile?.phone_number || '');
+  }, [profile?.name, profile?.phone_number]);
 
   const handleSaveProfile = async () => {
     if (!name.trim()) return;
     setIsSaving(true);
     try {
-      await updateProfile.mutateAsync({ name: name.trim() });
+      await updateProfile.mutateAsync({ name: name.trim(), phone_number: phoneNumber.trim() || null });
       toast.success('Perfil actualizado');
     } catch (error) {
       toast.error('Error al guardar');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveUserPhone = async (userId: string, nextPhoneNumber: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ phone_number: nextPhoneNumber.trim() || null })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      toast.success('Teléfono actualizado');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No pude guardar el teléfono');
     }
   };
 
@@ -82,6 +102,7 @@ export default function Settings() {
           name: newUserName.trim(),
           email: newUserEmail.trim(),
           password: newUserPassword,
+          phone_number: newUserPhoneNumber.trim() || null,
           role: newUserRole,
         },
       });
@@ -98,6 +119,7 @@ export default function Settings() {
       setNewUserName('');
       setNewUserEmail('');
       setNewUserPassword('');
+      setNewUserPhoneNumber('');
       setNewUserRole('client');
     } catch (error) {
       console.error('Error creating user:', error);
@@ -144,6 +166,15 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" value={profile?.email || ''} disabled />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="phone-number">WhatsApp</Label>
+                <Input
+                  id="phone-number"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="54911..."
+                />
               </div>
             </div>
             <div className="flex justify-end">
@@ -285,7 +316,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {isAdmin && (
+        {isSystemAdmin && (
           <Card className="animate-fade-in" style={{ animationDelay: '150ms' }}>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -328,6 +359,15 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="new-user-phone">WhatsApp</Label>
+                  <Input
+                    id="new-user-phone"
+                    placeholder="54911..."
+                    value={newUserPhoneNumber}
+                    onChange={(e) => setNewUserPhoneNumber(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
                   <Label>Rol</Label>
                   <Select value={newUserRole} onValueChange={(value: 'admin' | 'dev' | 'client') => setNewUserRole(value)}>
                     <SelectTrigger>
@@ -356,7 +396,44 @@ export default function Settings() {
           </Card>
         )}
 
-        <Card className="animate-fade-in border-destructive/30" style={{ animationDelay: isAdmin ? '200ms' : '150ms' }}>
+        {isSystemAdmin && (
+          <Card className="animate-fade-in" style={{ animationDelay: '175ms' }}>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                WhatsApp por usuario
+              </CardTitle>
+              <CardDescription>
+                Cargá el número de cada miembro del equipo para avisarle por WhatsApp cuando reciba tareas.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {adminProfiles.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Todavía no hay miembros internos para configurar.</p>
+              ) : (
+                adminProfiles.map((internalProfile) => (
+                  <div key={internalProfile.user_id} className="flex flex-col gap-3 rounded-lg border border-border/60 p-3 sm:flex-row sm:items-center">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{internalProfile.name}</p>
+                      <p className="text-xs text-muted-foreground">{internalProfile.email}</p>
+                    </div>
+                    <Input
+                      defaultValue={internalProfile.phone_number || ''}
+                      placeholder="54911..."
+                      className="sm:w-[220px]"
+                      onBlur={(event) => {
+                        if ((internalProfile.phone_number || '') === event.target.value) return;
+                        handleSaveUserPhone(internalProfile.user_id, event.target.value);
+                      }}
+                    />
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="animate-fade-in border-destructive/30" style={{ animationDelay: isSystemAdmin ? '220ms' : '150ms' }}>
           <CardHeader>
             <CardTitle className="text-base text-destructive">Zona de peligro</CardTitle>
             <CardDescription>Acciones irreversibles</CardDescription>

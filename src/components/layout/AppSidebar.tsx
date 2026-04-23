@@ -11,7 +11,7 @@ import {
   Ticket,
   BookOpen,
   FileText,
-  Webhook
+  Webhook,
 } from 'lucide-react';
 import scaloLogo from '@/assets/scalo-logo.png';
 

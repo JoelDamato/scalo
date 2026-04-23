@@ -11,6 +11,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   name: string;
+  phone_number?: string;
   role?: "admin" | "dev" | "client";
 }
 
@@ -56,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { email, password, name, role }: CreateUserRequest = await req.json();
+    const { email, password, name, role, phone_number }: CreateUserRequest = await req.json();
 
     if (!email || !password || !name) {
       throw new Error("Missing required fields: email, password, name");
@@ -107,6 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
           user_id: userId,
           email,
           name,
+          phone_number: phone_number?.trim() || null,
         },
         { onConflict: "user_id" },
       );

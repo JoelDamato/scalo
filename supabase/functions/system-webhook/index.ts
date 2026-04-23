@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-key",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -32,6 +32,14 @@ const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
+}
+
+async function sha256Hex(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function getString(payload: Record<string, unknown>, key: string) {
@@ -355,10 +363,12 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    const bearerToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+    const headerWebhookKey = req.headers.get("x-webhook-key")?.trim() ?? "";
+    const token = headerWebhookKey || bearerToken;
 
     if (!token) {
-      return jsonResponse({ error: "Authorization Bearer token es requerido" }, 401);
+      return jsonResponse({ error: "Authorization Bearer token o x-webhook-key es requerido" }, 401);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -374,22 +384,55 @@ serve(async (req) => {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
 
+    let userId: string | null = null;
+    let role: AppRole | undefined;
+    let authMode: "session" | "api_key" = "session";
+
     const { data: userData, error: userError } = await serviceClient.auth.getUser(token);
     const user = userData.user;
 
-    if (userError || !user) {
-      return jsonResponse({ error: "Usuario no válido" }, 401);
+    if (!userError && user) {
+      userId = user.id;
+      const { data: roleData, error: roleError } = await serviceClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (roleError) throw new ResponseError(roleError.message, 400);
+      role = roleData?.role as AppRole | undefined;
+    } else {
+      const tokenHash = await sha256Hex(token);
+      const { data: apiKey, error: apiKeyError } = await serviceClient
+        .from("webhook_api_keys")
+        .select("id, created_by")
+        .eq("token_hash", tokenHash)
+        .is("revoked_at", null)
+        .maybeSingle();
+
+      if (apiKeyError) throw new ResponseError(apiKeyError.message, 400);
+      if (!apiKey) {
+        return jsonResponse({ error: "Token no válido" }, 401);
+      }
+
+      authMode = "api_key";
+      userId = apiKey.created_by;
+
+      const { data: roleData, error: roleError } = await serviceClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", apiKey.created_by)
+        .maybeSingle();
+
+      if (roleError) throw new ResponseError(roleError.message, 400);
+      role = roleData?.role as AppRole | undefined;
+
+      await serviceClient
+        .from("webhook_api_keys")
+        .update({ last_used_at: new Date().toISOString() })
+        .eq("id", apiKey.id);
     }
 
-    const { data: roleData, error: roleError } = await serviceClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (roleError) throw new ResponseError(roleError.message, 400);
-
-    const role = roleData?.role as AppRole | undefined;
     if (!role || role === "client") {
       return jsonResponse({ error: "Este endpoint es solo para usuarios internos" }, 403);
     }
@@ -401,12 +444,17 @@ serve(async (req) => {
       throw new ResponseError("action es requerido", 400);
     }
 
-    const result = await executeAction(userClient, user.id, body.action, payload);
+    const actorClient = authMode === "session"
+      ? userClient
+      : createClient(supabaseUrl, supabaseServiceKey);
+
+    const result = await executeAction(actorClient, userId!, body.action, payload);
 
     return jsonResponse({
       ok: true,
       action: body.action,
       role,
+      auth_mode: authMode,
       result,
     });
   } catch (error) {
