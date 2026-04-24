@@ -47,6 +47,7 @@ export default function Reports() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const highlightedReportId = searchParams.get('report');
+  const canAddReportAddendums = role === 'admin' || role === 'dev';
   const canCommentReports = role === 'admin';
 
   const profileByUserId = useMemo(
@@ -222,7 +223,7 @@ export default function Reports() {
                       <ReportAddendums
                         reportId={report.id}
                         profiles={profiles}
-                        canAdd={canCommentReports}
+                        canAdd={canAddReportAddendums}
                       />
                       <ReportComments
                         reportId={report.id}
