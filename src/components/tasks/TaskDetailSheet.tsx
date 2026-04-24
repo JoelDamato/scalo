@@ -173,6 +173,7 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
             scheduled_date: editScheduledDate || null,
             scheduled_time: editScheduledTime || null,
             scheduled_end_time: editScheduledEndTime || null,
+            assignee_id: selectedAssignees[0] || null,
           }
         });
 
@@ -202,7 +203,11 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
         
         // Send notifications to newly assigned users
         for (const userId of newAssigneeIds) {
-          await sendAssignmentNotification(userId, task.title, task.id, task.project_id);
+          try {
+            await sendAssignmentNotification(userId, task.title, task.id, task.project_id);
+          } catch (error) {
+            console.error('Error sending assignment notification:', error);
+          }
           try {
             await sendWhatsAppAssignmentNotification.mutateAsync({
               task_id: task.id,

@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.discord-dylan-notify]
 verify_jwt = false
+
+[functions.discord-task-completed]
+verify_jwt = false

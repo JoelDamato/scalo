@@ -33,6 +33,40 @@ export interface Task {
   updated_at: string;
 }
 
+async function notifyTaskCompleted(task: Task) {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error || !session?.access_token) return;
+
+  let project_name = 'Sin proyecto';
+  if (task.project_id) {
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name')
+      .eq('id', task.project_id)
+      .maybeSingle();
+
+    if (project?.name) {
+      project_name = project.name;
+    }
+  }
+
+  await supabase.functions.invoke('discord-task-completed', {
+    body: {
+      task_id: task.id,
+      task_title: task.title,
+      project_name,
+    },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      'X-App-Origin': window.location.origin,
+    },
+  });
+}
+
 export interface Profile {
   id: string;
   user_id: string;
@@ -363,6 +397,13 @@ export function useUpdateTaskStatus() {
         .single();
       
       if (error) throw error;
+      if (status === 'done') {
+        try {
+          await notifyTaskCompleted(data as Task);
+        } catch (notifyError) {
+          console.error('Error sending task completed Discord notification:', notifyError);
+        }
+      }
       return data;
     },
     onSuccess: () => {
@@ -378,7 +419,7 @@ export function useCreateTask() {
   const notifyTaskAssignment = useWhatsAppTaskAssignmentNotification();
   
   return useMutation({
-    mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean; images?: File[] }) => {
+    mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string | null; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean; images?: File[] }) => {
       const { images = [], ...taskPayload } = task;
       const taskToCreate = {
         ...taskPayload,
@@ -392,6 +433,20 @@ export function useCreateTask() {
         .single();
       
       if (error) throw error;
+
+      if (taskToCreate.assignee_id) {
+        const { error: assigneeError } = await supabase
+          .from('task_assignees')
+          .upsert(
+            {
+              task_id: data.id,
+              user_id: taskToCreate.assignee_id,
+            },
+            { onConflict: 'task_id,user_id' },
+          );
+
+        if (assigneeError) throw assigneeError;
+      }
 
       if (images.length > 0) {
         if (!user?.id) {
@@ -429,7 +484,7 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Pick<Task, 'is_client_visible' | 'client_input_required' | 'title' | 'description' | 'source_ticket_id' | 'scheduled_date' | 'scheduled_time' | 'scheduled_end_time'>> }) => {
+    mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Pick<Task, 'is_client_visible' | 'client_input_required' | 'title' | 'description' | 'source_ticket_id' | 'scheduled_date' | 'scheduled_time' | 'scheduled_end_time' | 'assignee_id' | 'status'>> }) => {
       const { data, error } = await supabase
         .from('tasks')
         .update(updates)
@@ -438,6 +493,13 @@ export function useUpdateTask() {
         .single();
       
       if (error) throw error;
+      if (updates.status === 'done') {
+        try {
+          await notifyTaskCompleted(data as Task);
+        } catch (notifyError) {
+          console.error('Error sending task completed Discord notification:', notifyError);
+        }
+      }
       return data;
     },
     onSuccess: () => {

@@ -21,6 +21,7 @@ import {
 import { MAX_TASK_IMAGE_SIZE, useCreateTask } from '@/hooks/useData';
 import { useProjects } from '@/hooks/useData';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminProfiles } from '@/hooks/useAdminProfiles';
 import { toast } from 'sonner';
 
 interface CreateTaskDialogProps {
@@ -47,11 +48,13 @@ export function CreateTaskDialog({
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [scheduledEndTime, setScheduledEndTime] = useState('');
+  const [assigneeId, setAssigneeId] = useState('unassigned');
   const [images, setImages] = useState<File[]>([]);
 
   const { data: projects = [] } = useProjects();
+  const { data: adminProfiles = [] } = useAdminProfiles();
   const createTask = useCreateTask();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   const isInternal = mode === 'internal';
 
@@ -65,9 +68,10 @@ export function CreateTaskDialog({
       setScheduledDate('');
       setScheduledTime('');
       setScheduledEndTime('');
+      setAssigneeId(assignToCurrentUser && user?.id ? user.id : 'unassigned');
       setImages([]);
     }
-  }, [open, defaultStatus, defaultProjectId]);
+  }, [open, defaultStatus, defaultProjectId, assignToCurrentUser, user?.id]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -120,7 +124,7 @@ export function CreateTaskDialog({
         images,
         is_client_visible: !isInternal, // Internal tasks are not client visible
         client_input_required: false,
-        assignee_id: assignToCurrentUser ? user?.id : undefined,
+        assignee_id: assigneeId === 'unassigned' ? null : assigneeId,
       });
       
       toast.success('Tarea creada');
@@ -202,6 +206,25 @@ export function CreateTaskDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {(role === 'admin' || role === 'dev') && (
+            <div className="space-y-2">
+              <Label htmlFor="assignee">Responsable</Label>
+              <Select value={assigneeId} onValueChange={setAssigneeId}>
+                <SelectTrigger id="assignee">
+                  <SelectValue placeholder="Sin asignar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Sin asignar</SelectItem>
+                  {adminProfiles.map((profile) => (
+                    <SelectItem key={profile.user_id} value={profile.user_id}>
+                      {profile.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Agenda</Label>

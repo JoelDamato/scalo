@@ -1,158 +1,179 @@
-import { useEffect, useRef, useState } from "react";
-import { FileText, Phone, Rocket } from "lucide-react";
-import { motion, useAnimation, useInView } from "framer-motion";
+import { useLayoutEffect, useRef } from "react";
+import { Bot, CalendarCheck2, Database, MessageCircleMore, UserPlus } from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const steps = [
   {
     number: "01",
-    title: "Punto de partida",
-    duration: "60 min",
-    icon: Phone,
-    description: "Nos reunimos para entender como funciona tu negocio, tus necesidades y objetivos.",
+    title: "Entra un lead",
+    description: "Cada contacto nuevo cae en un sistema que ordena oportunidades desde el primer segundo.",
+    icon: UserPlus,
   },
   {
     number: "02",
-    title: "Plan SCALO",
-    duration: "2-3 dias",
-    icon: FileText,
-    description: "Disenamos un plan personalizado para que puedas implementar en todos tus negocios.",
+    title: "WhatsApp responde automático",
+    description: "Las consultas reciben respuesta al instante con automatizaciones que sostienen velocidad y contexto.",
+    icon: MessageCircleMore,
   },
   {
     number: "03",
-    title: "Acompanamiento 1:1",
-    duration: "3 meses",
-    icon: FileText,
-    description:
-      "Cuentas con un equipo de especialistas en Marketing, Estrategia, Fulfillment, Content Quality y Ventas.",
+    title: "El CRM clasifica y guarda datos",
+    description: "Toda la información queda estructurada para que tu equipo no vuelva a perder seguimiento.",
+    icon: Database,
   },
   {
     number: "04",
-    title: "Auditoria",
-    duration: "Continuo",
-    icon: Rocket,
-    description: "Revisar resultados, ajustar estrategias y planificar el siguiente nivel de crecimiento.",
+    title: "Se agenda y se hace seguimiento",
+    description: "El sistema mueve la conversación, agenda, recuerda y mantiene vivo el proceso comercial.",
+    icon: CalendarCheck2,
+  },
+  {
+    number: "05",
+    title: "El negocio vende con menos operación manual",
+    description: "Menos fricción operativa, más control y una máquina comercial que escala sin depender de apagar incendios.",
+    icon: Bot,
   },
 ];
 
-function LandingProcessStep({ step, index }: { step: (typeof steps)[0]; index: number }) {
-  const stepRef = useRef<HTMLDivElement | null>(null);
-  const controls = useAnimation();
-  const isInView = useInView(stepRef, {
-    margin: "-45% 0px -45% 0px",
-  });
-
-  const Icon = step.icon;
-
-  useEffect(() => {
-    if (isInView) {
-      void controls.start({
-        backgroundColor: "#ffffff",
-        borderColor: "#ffffff",
-        color: "#000000",
-      });
-      return;
-    }
-
-    void controls.start({
-      backgroundColor: "#000000",
-      borderColor: "#333333",
-      color: "#666666",
-    });
-  }, [controls, isInView]);
-
-  return (
-    <div className="relative" ref={stepRef}>
-      <div className="relative flex flex-col md:block">
-        <div
-          className={`relative pb-24 pl-24 md:w-full md:pl-0 ${
-            index % 2 === 0 ? "md:pr-[calc(50%+3rem)]" : "md:pl-[calc(50%+3rem)]"
-          }`}
-        >
-          <motion.div
-            className="absolute left-5 z-10 -ml-[24px] flex h-12 w-12 items-center justify-center rounded-full border md:left-1/2"
-            initial={{
-              backgroundColor: "#000000",
-              borderColor: "#333333",
-            }}
-            animate={controls}
-          >
-            <motion.span
-              className="text-sm font-medium"
-              initial={{ color: "#666666" }}
-              animate={{ color: isInView ? "#000000" : "#666666" }}
-              transition={{ duration: 0.3 }}
-            >
-              {step.number}
-            </motion.span>
-          </motion.div>
-
-          <motion.div
-            className="py-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="rounded-3xl border border-gray-800 bg-black p-8 shadow-sm">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Icon className="h-6 w-6 text-white" />
-                  <h3 className="text-xl font-medium tracking-tight text-white">{step.title}</h3>
-                </div>
-                <span className="rounded-full bg-gray-900 px-4 py-1 text-sm font-light text-gray-300">
-                  {step.duration}
-                </span>
-              </div>
-              <p className="mt-4 text-sm font-light leading-relaxed text-gray-400">{step.description}</p>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </div>
-  );
-}
+gsap.registerPlugin(ScrollTrigger);
 
 export function LandingProcess() {
-  const [progressHeight, setProgressHeight] = useState(0);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
   const progressRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!progressRef.current) {
-        return;
-      }
+  useLayoutEffect(() => {
+    if (!sectionRef.current || !trackRef.current || !progressRef.current) return;
 
-      const { top, bottom } = progressRef.current.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const nextHeight = Math.min(Math.max(windowHeight / 2 - top, 0), bottom - top);
-      setProgressHeight(nextHeight);
+    const mm = gsap.matchMedia();
+    const ctx = gsap.context(() => {
+      mm.add("(min-width: 768px)", () => {
+        const cards = gsap.utils.toArray<HTMLElement>("[data-story-card]");
+
+        gsap.set(cards, {
+          opacity: (index) => (index === 0 ? 1 : 0.25),
+          y: (index) => (index === 0 ? 0 : 40),
+          scale: (index) => (index === 0 ? 1 : 0.96),
+        });
+
+        const timeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top top",
+            end: `+=${steps.length * 520}`,
+            scrub: true,
+            pin: true,
+            anticipatePin: 1,
+          },
+        });
+
+        steps.forEach((_, index) => {
+          const card = cards[index];
+          if (!card) return;
+
+          timeline.to(
+            progressRef.current,
+            {
+              scaleX: (index + 1) / steps.length,
+              transformOrigin: "left center",
+              ease: "none",
+              duration: 1,
+            },
+            index,
+          );
+
+          timeline.to(
+            cards,
+            {
+              opacity: 0.2,
+              y: 44,
+              scale: 0.96,
+              duration: 0.5,
+              ease: "power2.out",
+              stagger: 0,
+            },
+            index,
+          );
+
+          timeline.to(
+            card,
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.7,
+              ease: "power3.out",
+            },
+            index + 0.1,
+          );
+        });
+      });
+    }, sectionRef);
+
+    return () => {
+      ctx.revert();
+      mm.revert();
     };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
-    <section className="relative border-y border-gray-800 bg-black">
-      <div className="container py-24 sm:py-32">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-medium tracking-tight text-white sm:text-4xl">
-            El camino claro, simple y probado para cumplir tus metas.
-          </h2>
-        </div>
+    <section
+      ref={sectionRef}
+      className="relative overflow-hidden border-y border-gray-800 bg-black py-24 md:py-0"
+      data-reveal-section
+    >
+      <div className="container px-4 md:px-6">
+        <div className="grid gap-12 md:min-h-screen md:grid-cols-[minmax(360px,0.98fr),minmax(0,1.02fr)] md:items-center md:gap-12 lg:gap-20">
+          <div className="space-y-6 py-4 md:py-24 md:pr-6 lg:pr-10">
+            <p className="text-xs uppercase tracking-[0.32em] text-gray-500">Sistema Scalo</p>
+            <h2 className="max-w-[13ch] text-3xl font-medium leading-[0.94] tracking-tight text-white sm:max-w-[14ch] sm:text-4xl md:max-w-[11ch] md:text-[clamp(3.1rem,4vw,4.7rem)]">
+              Un sistema que responde, ordena y vende mientras tu operación se mantiene liviana.
+            </h2>
+            <p className="max-w-[34rem] text-lg font-light text-gray-400">
+              Cada paso está pensado para que el negocio deje de perseguir mensajes, planillas y seguimientos manuales.
+            </p>
 
-        <div className="relative mx-auto mt-24 max-w-5xl">
-          <div ref={progressRef}>
-            <div className="absolute left-[22px] top-0 -ml-[4px] h-full w-[8px] rounded-full border border-gray-800 bg-gray-900 md:left-1/2">
-              <motion.div
-                className="relative left-1/2 w-2 -translate-x-1/2 rounded-full bg-white"
-                style={{ height: progressHeight }}
-                transition={{ duration: 0.3 }}
-              />
+            <div className="rounded-lg border border-gray-800 bg-white/[0.03] p-4">
+              <div className="mb-3 flex items-center justify-between text-xs uppercase tracking-[0.28em] text-gray-500">
+                <span>Progreso del sistema</span>
+                <span>{steps.length} etapas</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-white/10">
+                <div ref={progressRef} className="h-full rounded-full bg-white" style={{ transform: "scaleX(0.2)", transformOrigin: "left center" }} />
+              </div>
             </div>
-            {steps.map((step, index) => (
-              <LandingProcessStep key={step.number} step={step} index={index} />
-            ))}
+          </div>
+
+          <div ref={trackRef} className="space-y-4 py-2 md:py-24 md:pl-4 lg:pl-8">
+            {steps.map((step) => {
+              const Icon = step.icon;
+
+              return (
+                <article
+                  key={step.number}
+                  data-story-card
+                  className="mx-auto w-full max-w-[720px] rounded-lg border border-gray-800 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 backdrop-blur-sm md:p-8"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium tracking-[0.24em] text-gray-400">
+                          {step.number}
+                        </span>
+                        <div className="rounded-md bg-white text-black p-2">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                      </div>
+                      <h3 className="text-2xl font-medium text-white">{step.title}</h3>
+                    </div>
+                  </div>
+                  <p className="mt-5 max-w-xl text-base font-light leading-relaxed text-gray-400 md:text-lg">
+                    {step.description}
+                  </p>
+                </article>
+              );
+            })}
           </div>
         </div>
       </div>
