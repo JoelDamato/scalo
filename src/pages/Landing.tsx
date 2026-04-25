@@ -62,6 +62,7 @@ export default function Landing() {
 
   useLayoutEffect(() => {
     if (!pageRef.current) return;
+    if (window.matchMedia("(max-width: 767px)").matches) return;
 
     const lenis = new Lenis({
       duration: 1.15,
@@ -112,9 +113,6 @@ export default function Landing() {
         },
       });
 
-      mm.add("(max-width: 767px)", () => {
-        gsap.set("[data-hero-content]", { clearProps: "scale,opacity" });
-      });
     }, pageRef);
 
     return () => {

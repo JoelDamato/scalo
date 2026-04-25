@@ -52,6 +52,7 @@ export function ScaloSystemScroll() {
 
   useLayoutEffect(() => {
     if (!sectionRef.current) return;
+    if (window.matchMedia("(max-width: 1023px)").matches) return;
 
     const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
@@ -429,26 +430,6 @@ export function ScaloSystemScroll() {
         }, 4.12);
       });
 
-      mm.add("(max-width: 1023px)", () => {
-        const mobileScenes = gsap.utils.toArray<HTMLElement>("[data-mobile-scene]");
-
-        mobileScenes.forEach((scene) => {
-          const targets = scene.querySelectorAll("[data-mobile-reveal]");
-          gsap.from(targets, {
-            opacity: 0,
-            y: 40,
-            scale: 0.96,
-            duration: 0.85,
-            ease: "power3.out",
-            stagger: 0.08,
-            scrollTrigger: {
-              trigger: scene,
-              start: "top 80%",
-              once: true,
-            },
-          });
-        });
-      });
     }, sectionRef);
 
     return () => {

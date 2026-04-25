@@ -83,6 +83,7 @@ export function ScaloHeroExplosion() {
     const section = sectionRef.current;
     const canvas = canvasRef.current;
     if (!section || !canvas) return;
+    if (window.matchMedia("(max-width: 767px)").matches) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -295,13 +296,21 @@ export function ScaloHeroExplosion() {
     >
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 h-full w-full"
+        className="absolute inset-0 hidden h-full w-full md:block"
         aria-hidden="true"
       />
 
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(8,204,184,0.08),transparent_34%),linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_24%,transparent_74%,rgba(255,255,255,0.03))]" />
       <div className="pointer-events-none absolute inset-y-0 left-[6%] hidden w-px bg-white/8 lg:block" />
       <div className="pointer-events-none absolute inset-y-0 right-[6%] hidden w-px bg-white/8 lg:block" />
+
+      <div className="absolute inset-x-0 top-28 px-4 sm:px-6 md:hidden">
+        <div className="mx-auto flex max-w-[220px] items-center justify-center rounded-[28px] border border-[#7dfff0]/12 bg-white/[0.03] p-7 shadow-[0_0_80px_rgba(125,255,240,0.08)] backdrop-blur-sm">
+          <div className="flex h-28 w-28 items-center justify-center rounded-full border border-white/10 bg-[radial-gradient(circle,rgba(125,255,240,0.18),rgba(255,255,255,0.03)_60%,transparent_100%)]">
+            <span className="text-[1.65rem] font-medium tracking-[0.32em] text-white">SCALO</span>
+          </div>
+        </div>
+      </div>
 
       <div className="container relative z-10 flex min-h-screen items-center px-4 pb-20 pt-36 sm:px-6 lg:pb-24 lg:pt-32">
         <div className="w-full max-w-[500px] space-y-6 lg:ml-0 lg:max-w-[520px]">
