@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { requireInternalUser } from "../_shared/whatsapp.ts";
 import { corsHeaders } from "../_shared/whatsapp.ts";
 
-const DYLAN_USER_ID = "378759b2-7f24-4523-893c-d23bd3213484";
 const DISCORD_WEBHOOK_URL =
   "https://discord.com/api/webhooks/1496974779465334996/pge43L0-Gn8snI4z8sw7O2LfejtlZi--QNLKB8vunAe9NudqhJFVnDntkH1aADXx-y2I";
 
@@ -21,9 +20,11 @@ serve(async (req) => {
     const relatedAssigneeIds = Array.isArray(body.related_assignee_ids)
       ? body.related_assignee_ids.filter((value): value is string => typeof value === "string")
       : [];
+    const dylanUserIds = await getDylanUserIds(supabase);
 
     const shouldNotify =
-      targetUserId === DYLAN_USER_ID || relatedAssigneeIds.includes(DYLAN_USER_ID);
+      (targetUserId !== null && dylanUserIds.includes(targetUserId))
+      || relatedAssigneeIds.some((userId) => dylanUserIds.includes(userId));
 
     if (!shouldNotify) {
       return jsonResponse({ ok: true, ignored: true, reason: "not_dylan" });
@@ -97,4 +98,17 @@ function jsonResponse(payload: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+async function getDylanUserIds(supabase: Awaited<ReturnType<typeof requireInternalUser>>["supabase"]) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .or("email.ilike.dylanmanuel2003@gmail.com,name.ilike.Dylan,name.ilike.Dylan %");
+
+  if (error) throw error;
+
+  return (data || [])
+    .map((profile) => profile.user_id)
+    .filter((value): value is string => typeof value === "string");
 }

@@ -55,7 +55,7 @@ async function notifyTaskCompleted(task: Task) {
     }
   }
 
-  await supabase.functions.invoke('discord-task-completed', {
+  const { error: invokeError } = await supabase.functions.invoke('discord-task-completed', {
     body: {
       task_id: task.id,
       task_title: task.title,
@@ -66,6 +66,10 @@ async function notifyTaskCompleted(task: Task) {
       'X-App-Origin': window.location.origin,
     },
   });
+
+  if (invokeError) {
+    throw invokeError;
+  }
 }
 
 export interface Profile {

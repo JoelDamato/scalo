@@ -241,9 +241,13 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
       createComment.mutate({ taskId: task.id, content: newComment.trim() });
 
       const assignedUserIds = assignees.map((assignee) => assignee.user_id);
-      if (assignedUserIds.includes('378759b2-7f24-4523-893c-d23bd3213484') && user?.id !== '378759b2-7f24-4523-893c-d23bd3213484') {
+      if (assignedUserIds.length > 0) {
         try {
-          await supabase.functions.invoke('discord-dylan-notify', {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          const { error } = await supabase.functions.invoke('discord-dylan-notify', {
             body: {
               event_type: 'task_comment',
               related_assignee_ids: assignedUserIds,
@@ -252,10 +256,14 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
               link: `/my-tasks?task=${task.id}`,
             },
             headers: {
-              Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+              Authorization: `Bearer ${session?.access_token || ''}`,
               'X-App-Origin': window.location.origin,
             },
           });
+
+          if (error) {
+            throw error;
+          }
         } catch (error) {
           console.error('Error sending Dylan Discord task comment notification:', error);
         }
