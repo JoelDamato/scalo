@@ -23,6 +23,7 @@ import { useProjects } from '@/hooks/useData';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminProfiles } from '@/hooks/useAdminProfiles';
 import { toast } from 'sonner';
+import { taskPriorityLabel, type TaskPriority } from '@/lib/task-priority';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -45,6 +46,7 @@ export function CreateTaskDialog({
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState(defaultProjectId || '');
   const [status, setStatus] = useState<'backlog' | 'in-progress' | 'review' | 'done'>(defaultStatus);
+  const [priority, setPriority] = useState<TaskPriority>('medium');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [scheduledEndTime, setScheduledEndTime] = useState('');
@@ -64,6 +66,7 @@ export function CreateTaskDialog({
       setTitle('');
       setDescription('');
       setStatus(defaultStatus);
+      setPriority('medium');
       setProjectId(defaultProjectId || '');
       setScheduledDate('');
       setScheduledTime('');
@@ -118,6 +121,7 @@ export function CreateTaskDialog({
         description: description.trim() || undefined,
         project_id: isInternal ? null : projectId,
         status,
+        priority,
         scheduled_date: scheduledDate || null,
         scheduled_time: scheduledTime || null,
         scheduled_end_time: scheduledEndTime || null,
@@ -203,6 +207,22 @@ export function CreateTaskDialog({
                 <SelectItem value="in-progress">En progreso</SelectItem>
                 <SelectItem value="review">Revisión</SelectItem>
                 <SelectItem value="done">Finalizada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="priority">Prioridad</Label>
+            <Select value={priority} onValueChange={(v) => setPriority(v as TaskPriority)}>
+              <SelectTrigger id="priority">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(taskPriorityLabel) as TaskPriority[]).map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {taskPriorityLabel[value]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

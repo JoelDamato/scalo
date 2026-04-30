@@ -51,6 +51,15 @@ import { GoogleCalendarSyncButton } from '@/components/google/GoogleCalendarSync
 import { useGoogleCalendarStatus, useGoogleCalendarSync } from '@/hooks/useGoogleCalendar';
 import { useWhatsAppTaskAssignmentNotification } from '@/hooks/useWhatsAppIntegration';
 import { supabase } from '@/integrations/supabase/client';
+import { taskPriorityClassName, taskPriorityLabel, type TaskPriority } from '@/lib/task-priority';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TaskDetailSheetProps {
   task: Task | null;
@@ -102,6 +111,7 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
     const [editDescription, setEditDescription] = useState('');
     const [editClientVisible, setEditClientVisible] = useState(false);
     const [editClientInput, setEditClientInput] = useState(false);
+    const [editPriority, setEditPriority] = useState<TaskPriority>('medium');
     const [editScheduledDate, setEditScheduledDate] = useState('');
     const [editScheduledTime, setEditScheduledTime] = useState('');
     const [editScheduledEndTime, setEditScheduledEndTime] = useState('');
@@ -144,6 +154,7 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
       setEditDescription(task.description || '');
       setEditClientVisible(task.is_client_visible);
       setEditClientInput(task.client_input_required);
+      setEditPriority(task.priority);
       setEditScheduledDate(task.scheduled_date || '');
       setEditScheduledTime(task.scheduled_time?.slice(0, 5) || '');
       setEditScheduledEndTime(task.scheduled_end_time?.slice(0, 5) || '');
@@ -170,6 +181,7 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
             description: editDescription.trim() || null,
             is_client_visible: editClientVisible,
             client_input_required: editClientInput,
+            priority: editPriority,
             scheduled_date: editScheduledDate || null,
             scheduled_time: editScheduledTime || null,
             scheduled_end_time: editScheduledEndTime || null,
@@ -437,6 +449,30 @@ export const TaskDetailSheet = forwardRef<HTMLDivElement, TaskDetailSheetProps>(
                 )}
               </div>
             )}
+
+            <div>
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                Prioridad
+              </h4>
+              {isEditing ? (
+                <Select value={editPriority} onValueChange={(value) => setEditPriority(value as TaskPriority)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(taskPriorityLabel) as TaskPriority[]).map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {taskPriorityLabel[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge variant="outline" className={cn('text-xs', taskPriorityClassName[task.priority])}>
+                  {taskPriorityLabel[task.priority]}
+                </Badge>
+              )}
+            </div>
 
             {/* Description */}
             <div>

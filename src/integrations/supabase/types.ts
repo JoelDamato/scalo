@@ -1836,6 +1836,7 @@ export type Database = {
           description: string | null
           id: string
           is_client_visible: boolean
+          priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
           source_ticket_id: string | null
           scheduled_date: string | null
@@ -1852,6 +1853,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_client_visible?: boolean
+          priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           source_ticket_id?: string | null
           scheduled_date?: string | null
@@ -1868,6 +1870,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_client_visible?: boolean
+          priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           source_ticket_id?: string | null
           scheduled_date?: string | null
@@ -2317,6 +2320,7 @@ export type Database = {
       product_type: "mvp" | "funnel" | "app" | "automation" | "landing_page"
       sprint_status: "planning" | "active" | "review" | "completed"
       story_status: "backlog" | "todo" | "in_progress" | "review" | "done"
+      task_priority: "low" | "medium" | "high" | "urgent"
       ticket_category: "bug" | "feature_request" | "question" | "other"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status:
@@ -2493,6 +2497,7 @@ export const Constants = {
       product_type: ["mvp", "funnel", "app", "automation", "landing_page"],
       sprint_status: ["planning", "active", "review", "completed"],
       story_status: ["backlog", "todo", "in_progress", "review", "done"],
+      task_priority: ["low", "medium", "high", "urgent"],
       ticket_category: ["bug", "feature_request", "question", "other"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: [

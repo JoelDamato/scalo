@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTasksAssignees } from '@/hooks/useTaskAssignees';
 import { useProfiles } from '@/hooks/useProfiles';
 import { ProjectTicketsColumn } from './ProjectTicketsColumn';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { sortTasks, type TaskSortOption } from '@/lib/task-priority';
 
 interface KanbanBoardProps {
   projectId?: string;
@@ -29,6 +31,7 @@ export function KanbanBoard({ projectId, mode = 'project' }: KanbanBoardProps) {
   const updateStatus = useUpdateTaskStatus();
   const { isAdmin } = useAuth();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [sortBy, setSortBy] = useState<TaskSortOption>('manual');
 
   if (isLoading) {
     return (
@@ -57,12 +60,29 @@ export function KanbanBoard({ projectId, mode = 'project' }: KanbanBoardProps) {
   };
 
   const getTasksByStatus = (status: TaskStatus) =>
-    tasks.filter(task => task.status === status);
+    sortTasks(tasks.filter(task => task.status === status), sortBy);
+
+  const sortControl = (
+    <div className="mb-4 flex justify-end">
+      <Select value={sortBy} onValueChange={(value) => setSortBy(value as TaskSortOption)}>
+        <SelectTrigger className="w-[220px]">
+          <SelectValue placeholder="Ordenar tareas" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="manual">Orden manual</SelectItem>
+          <SelectItem value="priority">Por prioridad</SelectItem>
+          <SelectItem value="scheduled">Por fecha</SelectItem>
+          <SelectItem value="recent">Más recientes</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   // For clients, show read-only view without DragDropContext
   if (!isAdmin) {
     return (
       <>
+        {sortControl}
         <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
           {columns.map(status => (
             <KanbanColumn
@@ -93,6 +113,7 @@ export function KanbanBoard({ projectId, mode = 'project' }: KanbanBoardProps) {
 
   return (
     <>
+      {sortControl}
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
           {columns.map(status => (

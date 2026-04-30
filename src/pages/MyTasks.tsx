@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useTasksAssignees } from '@/hooks/useTaskAssignees';
 import { cn } from '@/lib/utils';
+import { sortTasks, taskPriorityClassName, taskPriorityLabel, type TaskSortOption } from '@/lib/task-priority';
 
 type TaskStatus = 'backlog' | 'in-progress' | 'review' | 'done';
 
@@ -83,6 +84,9 @@ const MyTaskCard = memo(function MyTaskCard({
             ) : (
               <Badge variant="secondary">Interna</Badge>
             )}
+            <Badge variant="outline" className={cn('text-[10px]', taskPriorityClassName[task.priority])}>
+              {taskPriorityLabel[task.priority]}
+            </Badge>
             <StatusBadge status={task.status} />
           </div>
           {assigneeNames.length > 0 && (
@@ -132,6 +136,7 @@ export default function MyTasks() {
   const [assigneeFilter, setAssigneeFilter] = useState('mine');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [visibleTasks, setVisibleTasks] = useState<Task[]>([]);
+  const [sortBy, setSortBy] = useState<TaskSortOption>('priority');
 
   const tasks = isAdmin ? teamTasks : myTasks;
   const isLoading = isAdmin ? teamTasksLoading : myTasksLoading;
@@ -210,6 +215,8 @@ export default function MyTasks() {
     return visibleTasks.filter((task) => task.project_id === projectFilter);
   }, [projectFilter, visibleTasks]);
 
+  const orderedTasks = useMemo(() => sortTasks(filteredTasks, sortBy), [filteredTasks, sortBy]);
+
   const tasksByStatus = useMemo(() => {
     const grouped: Record<TaskStatus, Task[]> = {
       backlog: [],
@@ -218,14 +225,14 @@ export default function MyTasks() {
       done: [],
     };
 
-    filteredTasks.forEach((task) => {
+    orderedTasks.forEach((task) => {
       grouped[task.status].push(task);
     });
 
     return grouped;
-  }, [filteredTasks]);
+  }, [orderedTasks]);
 
-  const openTaskCount = filteredTasks.length - tasksByStatus.done.length;
+  const openTaskCount = orderedTasks.length - tasksByStatus.done.length;
   const selectedAssigneeName = assigneeFilter === 'all'
     ? 'Todo el equipo'
     : assigneeFilter === 'mine'
@@ -302,7 +309,7 @@ export default function MyTasks() {
           <Card>
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">{isAdmin ? selectedAssigneeName : 'Asignadas'}</p>
-              <p className="mt-1 text-2xl font-semibold">{filteredTasks.length}</p>
+              <p className="mt-1 text-2xl font-semibold">{orderedTasks.length}</p>
             </CardContent>
           </Card>
           <Card>
@@ -360,6 +367,17 @@ export default function MyTasks() {
                   )}
                 </SelectContent>
               </Select>
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as TaskSortOption)}>
+                <SelectTrigger className="sm:w-52">
+                  <SelectValue placeholder="Ordenar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="priority">Por prioridad</SelectItem>
+                  <SelectItem value="scheduled">Por fecha</SelectItem>
+                  <SelectItem value="recent">Más recientes</SelectItem>
+                  <SelectItem value="manual">Manual</SelectItem>
+                </SelectContent>
+              </Select>
               <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Crear tarea
@@ -383,7 +401,7 @@ export default function MyTasks() {
                   {isAdmin ? 'Probá ver todo el equipo o cambiar de miembro.' : 'Cuando alguien te asigne una tarea, va a aparecer acá.'}
                 </p>
               </div>
-            ) : filteredTasks.length === 0 ? (
+            ) : orderedTasks.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-6 py-12 text-center">
                 <CheckSquare className="mx-auto h-10 w-10 text-muted-foreground/40" />
                 <p className="mt-3 text-sm font-medium">No hay tareas en este filtro</p>

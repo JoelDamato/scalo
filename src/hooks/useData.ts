@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useWhatsAppTaskAssignmentNotification } from './useWhatsAppIntegration';
 import { useAssignmentNotifications } from './useNotifications';
+import type { TaskPriority } from '@/lib/task-priority';
 
 export interface Project {
   id: string;
@@ -22,6 +23,7 @@ export interface Task {
   title: string;
   description: string | null;
   status: 'backlog' | 'in-progress' | 'review' | 'done';
+  priority: TaskPriority;
   project_id: string | null;
   assignee_id: string | null;
   source_ticket_id: string | null;
@@ -425,7 +427,7 @@ export function useCreateTask() {
   const { sendAssignmentNotification } = useAssignmentNotifications();
   
   return useMutation({
-    mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; assignee_id?: string | null; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean; images?: File[] }) => {
+    mutationFn: async (task: { title: string; project_id?: string | null; description?: string; status?: string; priority?: TaskPriority; assignee_id?: string | null; source_ticket_id?: string | null; scheduled_date?: string | null; scheduled_time?: string | null; scheduled_end_time?: string | null; is_client_visible?: boolean; client_input_required?: boolean; images?: File[] }) => {
       const { images = [], ...taskPayload } = task;
       const taskToCreate = {
         ...taskPayload,
@@ -501,7 +503,7 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Pick<Task, 'is_client_visible' | 'client_input_required' | 'title' | 'description' | 'source_ticket_id' | 'scheduled_date' | 'scheduled_time' | 'scheduled_end_time' | 'assignee_id' | 'status'>> }) => {
+    mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Pick<Task, 'is_client_visible' | 'client_input_required' | 'title' | 'description' | 'source_ticket_id' | 'scheduled_date' | 'scheduled_time' | 'scheduled_end_time' | 'assignee_id' | 'status' | 'priority'>> }) => {
       const { data, error } = await supabase
         .from('tasks')
         .update(updates)

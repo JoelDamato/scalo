@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AssigneesAvatars } from './AssigneesAvatars';
 import type { Profile } from '@/hooks/useProfiles';
+import { Badge } from '@/components/ui/badge';
+import { taskPriorityClassName, taskPriorityLabel } from '@/lib/task-priority';
 
 interface TaskCardProps {
   task: Task;
@@ -46,9 +48,14 @@ export function TaskCard({ task, isDragging, onClick, isReadOnly, assignees = []
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium leading-tight group-hover:text-foreground/80 transition-colors flex-1">
-          {task.title}
-        </p>
+        <div className="flex-1">
+          <Badge variant="outline" className={cn('mb-1 text-[10px]', taskPriorityClassName[task.priority])}>
+            {taskPriorityLabel[task.priority]}
+          </Badge>
+          <p className="text-sm font-medium leading-tight group-hover:text-foreground/80 transition-colors">
+            {task.title}
+          </p>
+        </div>
       </div>
       
       {task.description && (

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import type { Task } from './useData';
+import { sortTasks } from '@/lib/task-priority';
 
 export function useMyTasks() {
   const { user } = useAuth();
@@ -44,11 +45,7 @@ export function useMyTasks() {
         taskById.set(task.id, task as Task);
       });
 
-      return Array.from(taskById.values()).sort((a, b) => {
-        const dateA = a.scheduled_date || a.updated_at;
-        const dateB = b.scheduled_date || b.updated_at;
-        return dateA.localeCompare(dateB);
-      });
+      return sortTasks(Array.from(taskById.values()), 'priority');
     },
     enabled: !!user?.id,
   });
