@@ -24,6 +24,7 @@
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html{scroll-behavior:smooth}
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
   body{
     font-family:'Inter',sans-serif;
     background:var(--bg);
@@ -692,6 +693,7 @@
   .compare-table{
     width:100%;
     border-collapse:collapse;
+    table-layout:fixed;
   }
   .compare-table th,.compare-table td{
     padding:20px 24px;
@@ -716,6 +718,12 @@
     letter-spacing:1px;
   }
   .compare-table td:first-child{color:var(--cream);font-weight:500}
+  .compare-table th:first-child,
+  .compare-table td:first-child{width:52%}
+  .compare-table th:nth-child(2),
+  .compare-table td:nth-child(2),
+  .compare-table th:nth-child(3),
+  .compare-table td:nth-child(3){width:24%}
   .compare-table tr:last-child td{border-bottom:none}
   .compare-table tr:hover td{background:rgba(255,255,255,0.02)}
   .compare-table .yes{color:var(--green);font-weight:700;font-size:18px}
@@ -859,11 +867,68 @@
 
   @media(max-width:600px){
     section{padding:80px 0}
+    .container{padding:0 18px}
     .gap-side{padding:40px 28px}
     .option-card{padding:40px 28px}
     .hero-meta{gap:32px}
     .stat-cell{padding:32px 20px}
     .moment{padding:100px 24px}
+    .option-card.recommended{padding-left:22px;padding-right:22px}
+    .option-title{font-size:32px}
+    .option-subtitle{min-height:auto}
+    .option-price-row{flex-wrap:wrap;gap:6px}
+    .option-price{font-size:52px}
+    .option-price-suffix{font-size:16px}
+    .delivery{padding:16px 16px;gap:12px}
+    .delivery span:last-child{text-align:right}
+    .ribbon{
+      top:22px;
+      right:-52px;
+      padding:8px 58px;
+      font-size:9px;
+      letter-spacing:2px;
+      transform:rotate(35deg) scale(0.92);
+      transform-origin:center;
+    }
+    .compare-wrap{border-radius:20px}
+    .compare-table th,
+    .compare-table td{
+      padding:14px 10px;
+      font-size:12px;
+    }
+    .compare-table th{
+      font-size:9px;
+      letter-spacing:1.2px;
+      line-height:1.35;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+    }
+    .compare-table th .sub{
+      font-size:9px;
+      letter-spacing:0.4px;
+      line-height:1.25;
+      margin-top:6px;
+    }
+    .compare-table td:first-child{
+      font-size:11.5px;
+      line-height:1.35;
+      padding-right:8px;
+    }
+    .compare-table td:nth-child(2),
+    .compare-table td:nth-child(3),
+    .compare-table th:nth-child(2),
+    .compare-table th:nth-child(3){
+      text-align:center;
+    }
+    .compare-table .yes,
+    .compare-table .no{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:100%;
+      font-size:16px;
+      line-height:1;
+    }
   }
 </style>
 </head>
