@@ -69,6 +69,7 @@ type CredentialFormData = z.infer<typeof credentialSchema>;
 
 interface ProjectCredentialsTabProps {
   projectId: string;
+  isAdmin: boolean;
 }
 
 function getDefaultValues(credential?: ProjectCredential): CredentialFormData {
@@ -81,7 +82,7 @@ function getDefaultValues(credential?: ProjectCredential): CredentialFormData {
   };
 }
 
-export function ProjectCredentialsTab({ projectId }: ProjectCredentialsTabProps) {
+export function ProjectCredentialsTab({ projectId, isAdmin }: ProjectCredentialsTabProps) {
   const { data: credentials = [], isLoading } = useProjectCredentials(projectId);
   const createCredential = useCreateProjectCredential();
   const updateCredential = useUpdateProjectCredential();
@@ -144,40 +145,44 @@ export function ProjectCredentialsTab({ projectId }: ProjectCredentialsTabProps)
               Contraseñas y Accesos
             </CardTitle>
             <CardDescription>
-              Guarda accesos de herramientas del proyecto. Esta sección es privada para el equipo interno.
+              {isAdmin
+                ? 'Guarda accesos de herramientas del proyecto para que el equipo y el cliente los tengan centralizados.'
+                : 'Acá tienes los accesos y contraseñas compartidas para operar este proyecto.'}
             </CardDescription>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nuevo Acceso
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Nuevo Acceso</DialogTitle>
-                <DialogDescription>
-                  Registra usuario y contraseña de una herramienta vinculada a este proyecto.
-                </DialogDescription>
-              </DialogHeader>
-              <ProjectCredentialForm
-                onSubmit={async (data) => {
-                  await createCredential.mutateAsync({
-                    project_id: projectId,
-                    tool_name: data.tool_name,
-                    access_url: data.access_url || null,
-                    username: data.username || null,
-                    password: data.password,
-                    notes: data.notes || null,
-                  });
-                  toast.success('Acceso guardado');
-                  setIsCreateOpen(false);
-                }}
-                isSubmitting={createCredential.isPending}
-              />
-            </DialogContent>
-          </Dialog>
+          {isAdmin && (
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nuevo Acceso
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Nuevo Acceso</DialogTitle>
+                  <DialogDescription>
+                    Registra usuario y contraseña de una herramienta vinculada a este proyecto.
+                  </DialogDescription>
+                </DialogHeader>
+                <ProjectCredentialForm
+                  onSubmit={async (data) => {
+                    await createCredential.mutateAsync({
+                      project_id: projectId,
+                      tool_name: data.tool_name,
+                      access_url: data.access_url || null,
+                      username: data.username || null,
+                      password: data.password,
+                      notes: data.notes || null,
+                    });
+                    toast.success('Acceso guardado');
+                    setIsCreateOpen(false);
+                  }}
+                  isSubmitting={createCredential.isPending}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
         </CardHeader>
         <CardContent>
           {credentials.length === 0 ? (
@@ -220,24 +225,28 @@ export function ProjectCredentialsTab({ projectId }: ProjectCredentialsTabProps)
                               </a>
                             </Button>
                           )}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setEditingCredential(credential)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => setDeletingCredential(credential)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setEditingCredential(credential)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => setDeletingCredential(credential)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
@@ -287,58 +296,62 @@ export function ProjectCredentialsTab({ projectId }: ProjectCredentialsTabProps)
         </CardContent>
       </Card>
 
-      <Dialog open={!!editingCredential} onOpenChange={() => setEditingCredential(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Editar Acceso</DialogTitle>
-            <DialogDescription>
-              Actualiza usuario, contraseña o datos de ingreso de esta herramienta.
-            </DialogDescription>
-          </DialogHeader>
-          {editingCredential && (
-            <ProjectCredentialForm
-              key={editingCredential.id}
-              credential={editingCredential}
-              onSubmit={async (data) => {
-                await updateCredential.mutateAsync({
-                  id: editingCredential.id,
-                  projectId,
-                  updates: {
-                    tool_name: data.tool_name,
-                    access_url: data.access_url || null,
-                    username: data.username || null,
-                    password: data.password,
-                    notes: data.notes || null,
-                  },
-                });
-                toast.success('Acceso actualizado');
-                setEditingCredential(null);
-              }}
-              isSubmitting={updateCredential.isPending}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {isAdmin && (
+        <>
+          <Dialog open={!!editingCredential} onOpenChange={() => setEditingCredential(null)}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Editar Acceso</DialogTitle>
+                <DialogDescription>
+                  Actualiza usuario, contraseña o datos de ingreso de esta herramienta.
+                </DialogDescription>
+              </DialogHeader>
+              {editingCredential && (
+                <ProjectCredentialForm
+                  key={editingCredential.id}
+                  credential={editingCredential}
+                  onSubmit={async (data) => {
+                    await updateCredential.mutateAsync({
+                      id: editingCredential.id,
+                      projectId,
+                      updates: {
+                        tool_name: data.tool_name,
+                        access_url: data.access_url || null,
+                        username: data.username || null,
+                        password: data.password,
+                        notes: data.notes || null,
+                      },
+                    });
+                    toast.success('Acceso actualizado');
+                    setEditingCredential(null);
+                  }}
+                  isSubmitting={updateCredential.isPending}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
 
-      <AlertDialog open={!!deletingCredential} onOpenChange={() => setDeletingCredential(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar acceso?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se eliminará el acceso de {deletingCredential?.tool_name}. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <AlertDialog open={!!deletingCredential} onOpenChange={() => setDeletingCredential(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Eliminar acceso?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Se eliminará el acceso de {deletingCredential?.tool_name}. Esta acción no se puede deshacer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Eliminar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
     </>
   );
 }

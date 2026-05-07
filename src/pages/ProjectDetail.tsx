@@ -257,12 +257,10 @@ export default function ProjectDetail() {
               <Globe className="h-4 w-4" />
               Páginas
             </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="credentials" className="gap-2">
-                <KeyRound className="h-4 w-4" />
-                Contraseñas
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="credentials" className="gap-2">
+              <KeyRound className="h-4 w-4" />
+              Contraseñas
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
@@ -467,11 +465,9 @@ export default function ProjectDetail() {
             <ProjectPagesTab projectId={id!} isAdmin={isAdmin} />
           </TabsContent>
 
-          {isAdmin && (
-            <TabsContent value="credentials" className="mt-6">
-              <ProjectCredentialsTab projectId={id!} />
-            </TabsContent>
-          )}
+          <TabsContent value="credentials" className="mt-6">
+            <ProjectCredentialsTab projectId={id!} isAdmin={isAdmin} />
+          </TabsContent>
         </Tabs>
 
         <CreateInitiativeDialog

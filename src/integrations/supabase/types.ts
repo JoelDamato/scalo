@@ -1307,6 +1307,7 @@ export type Database = {
       }
       project_instructions: {
         Row: {
+          category: string | null
           created_at: string
           created_by: string | null
           description: string
@@ -1317,6 +1318,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           created_by?: string | null
           description: string
@@ -1327,6 +1329,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           created_by?: string | null
           description?: string

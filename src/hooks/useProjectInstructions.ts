@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ProjectInstruction {
+  category: string | null;
   id: string;
   project_id: string;
   title: string;
@@ -14,6 +15,7 @@ export interface ProjectInstruction {
 
 export interface ProjectInstructionPayload {
   project_id: string;
+  category?: string | null;
   title: string;
   description: string;
   instruction_url?: string | null;
@@ -29,6 +31,7 @@ export function useProjectInstructions(projectId?: string) {
         .from('project_instructions')
         .select('*')
         .eq('project_id', projectId)
+        .order('category', { ascending: true, nullsFirst: false })
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
