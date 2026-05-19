@@ -115,8 +115,8 @@ export function ProjectInstructionsTab({ projectId, isAdmin }: ProjectInstructio
         projectId,
       });
       toast.success('Instructivo eliminado');
-    } catch {
-      toast.error('Error al eliminar el instructivo');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar el instructivo');
     } finally {
       setDeletingInstruction(null);
     }
@@ -162,15 +162,19 @@ export function ProjectInstructionsTab({ projectId, isAdmin }: ProjectInstructio
                 </DialogHeader>
                 <ProjectInstructionForm
                   onSubmit={async (data) => {
-                    await createInstruction.mutateAsync({
-                      project_id: projectId,
-                      category: data.category?.trim() || null,
-                      title: data.title,
-                      instruction_url: data.instruction_url || null,
-                      description: data.description,
-                    });
-                    toast.success('Instructivo guardado');
-                    setIsCreateOpen(false);
+                    try {
+                      await createInstruction.mutateAsync({
+                        project_id: projectId,
+                        category: data.category?.trim() || null,
+                        title: data.title.trim(),
+                        instruction_url: data.instruction_url?.trim() || null,
+                        description: data.description.trim(),
+                      });
+                      toast.success('Instructivo guardado');
+                      setIsCreateOpen(false);
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : 'No pude guardar el instructivo');
+                    }
                   }}
                   isSubmitting={createInstruction.isPending}
                 />
@@ -306,18 +310,22 @@ export function ProjectInstructionsTab({ projectId, isAdmin }: ProjectInstructio
             <ProjectInstructionForm
               instruction={editingInstruction}
               onSubmit={async (data) => {
-                await updateInstruction.mutateAsync({
-                  id: editingInstruction.id,
-                  projectId,
-                  updates: {
-                    category: data.category?.trim() || null,
-                    title: data.title,
-                    instruction_url: data.instruction_url || null,
-                    description: data.description,
-                  },
-                });
-                toast.success('Instructivo actualizado');
-                setEditingInstruction(null);
+                try {
+                  await updateInstruction.mutateAsync({
+                    id: editingInstruction.id,
+                    projectId,
+                    updates: {
+                      category: data.category?.trim() || null,
+                      title: data.title.trim(),
+                      instruction_url: data.instruction_url?.trim() || null,
+                      description: data.description.trim(),
+                    },
+                  });
+                  toast.success('Instructivo actualizado');
+                  setEditingInstruction(null);
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : 'No pude actualizar el instructivo');
+                }
               }}
               isSubmitting={updateInstruction.isPending}
             />

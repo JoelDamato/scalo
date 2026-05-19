@@ -21,6 +21,23 @@ export interface ProjectInstructionPayload {
   instruction_url?: string | null;
 }
 
+function getProjectInstructionsErrorMessage(action: 'load' | 'create' | 'update' | 'delete', error: unknown) {
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+
+  switch (action) {
+    case 'load':
+      return 'No pude cargar los instructivos del proyecto.';
+    case 'create':
+      return 'No pude guardar el instructivo.';
+    case 'update':
+      return 'No pude actualizar el instructivo.';
+    case 'delete':
+      return 'No pude eliminar el instructivo.';
+  }
+}
+
 export function useProjectInstructions(projectId?: string) {
   return useQuery({
     queryKey: ['project-instructions', projectId],
@@ -34,7 +51,7 @@ export function useProjectInstructions(projectId?: string) {
         .order('category', { ascending: true, nullsFirst: false })
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) throw new Error(getProjectInstructionsErrorMessage('load', error));
       return data as ProjectInstruction[];
     },
     enabled: !!projectId,
@@ -52,7 +69,7 @@ export function useCreateProjectInstruction() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) throw new Error(getProjectInstructionsErrorMessage('create', error));
       return data as ProjectInstruction;
     },
     onSuccess: (_, variables) => {
@@ -81,7 +98,7 @@ export function useUpdateProjectInstruction() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) throw new Error(getProjectInstructionsErrorMessage('update', error));
       return data as ProjectInstruction;
     },
     onSuccess: (_, variables) => {
@@ -100,7 +117,7 @@ export function useDeleteProjectInstruction() {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) throw new Error(getProjectInstructionsErrorMessage('delete', error));
       return projectId;
     },
     onSuccess: (projectId) => {
