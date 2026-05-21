@@ -31,6 +31,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import StudioBloom from "./pages/StudioBloom";
+import StudioBloomFinance from "./pages/StudioBloomFinance";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/calculadoraderoi" element={<RoiCalculator />} />
               <Route path="/studio-bloom" element={<StudioBloom />} />
+              <Route path="/studio-bloom-comisiones" element={<StudioBloomFinance />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding/:token" element={<ProjectOnboarding />} />
               <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />

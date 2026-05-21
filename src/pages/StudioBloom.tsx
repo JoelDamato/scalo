@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import studioBloomEmbedHtml from "../../public/studio-bloom-embed.html?raw";
 
 export default function StudioBloom() {
   useEffect(() => {
@@ -8,7 +9,7 @@ export default function StudioBloom() {
   return (
     <main className="h-screen w-full overflow-hidden bg-black">
       <iframe
-        src="/studio-bloom-embed.html"
+        srcDoc={studioBloomEmbedHtml}
         title="Studio Bloom x Scalo"
         className="h-full w-full border-0"
       />
