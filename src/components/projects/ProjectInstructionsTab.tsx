@@ -252,86 +252,100 @@ export function ProjectInstructionsTab({ projectId, isAdmin, publicToken }: Proj
                   </AccordionTrigger>
 
                   <AccordionContent className="pb-4">
-                    <div className="grid gap-4 lg:grid-cols-2">
+                    <Accordion
+                      type="multiple"
+                      defaultValue={items.map((instruction) => instruction.id)}
+                      className="grid gap-4 lg:grid-cols-2"
+                    >
                       {items.map((instruction) => {
                         const author = instruction.created_by ? profileByUserId.get(instruction.created_by) : null;
 
                         return (
                           <Card key={instruction.id} className="border-border/60 bg-background/40 shadow-sm">
-                            <CardHeader className="pb-4">
-                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div className="min-w-0">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <CardTitle className="text-base">{instruction.title}</CardTitle>
-                                    <Badge variant="secondary" className="gap-1">
-                                      <Tag className="h-3 w-3" />
-                                      {category}
-                                    </Badge>
-                                  </div>
-                                  <CardDescription className="mt-1">
-                                    Actualizado {formatDistanceToNow(new Date(instruction.updated_at), { addSuffix: true, locale: es })}
-                                    {author ? ` · por ${author.name || author.email}` : ''}
-                                  </CardDescription>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  {instruction.instruction_url && (
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" asChild>
-                                      <a href={instruction.instruction_url} target="_blank" rel="noreferrer">
-                                        <ExternalLink className="h-4 w-4" />
-                                      </a>
-                                    </Button>
-                                  )}
-                                  {isAdmin && (
-                                    <>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() => setEditingInstruction(instruction)}
-                                      >
-                                        <Pencil className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-destructive hover:text-destructive"
-                                        onClick={() => setDeletingInstruction(instruction)}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              {instruction.instruction_url && (
-                                <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-                                  <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                            <AccordionItem value={instruction.id} className="border-none">
+                              <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                                <div className="flex min-w-0 flex-1 flex-col gap-3 text-left sm:flex-row sm:items-start sm:justify-between">
                                   <div className="min-w-0">
-                                    <p className="text-xs font-medium text-muted-foreground">Link</p>
-                                    <a
-                                      href={instruction.instruction_url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="break-all text-sm text-primary hover:underline"
-                                    >
-                                      {instruction.instruction_url}
-                                    </a>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <CardTitle className="text-base">{instruction.title}</CardTitle>
+                                      <Badge variant="secondary" className="gap-1">
+                                        <Tag className="h-3 w-3" />
+                                        {category}
+                                      </Badge>
+                                    </div>
+                                    <CardDescription className="mt-1">
+                                      Actualizado {formatDistanceToNow(new Date(instruction.updated_at), { addSuffix: true, locale: es })}
+                                      {author ? ` · por ${author.name || author.email}` : ''}
+                                    </CardDescription>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {instruction.instruction_url && (
+                                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                        <a href={instruction.instruction_url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+                                          <ExternalLink className="h-4 w-4" />
+                                        </a>
+                                      </Button>
+                                    )}
+                                    {isAdmin && (
+                                      <>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            setEditingInstruction(instruction);
+                                          }}
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-destructive hover:text-destructive"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            setDeletingInstruction(instruction);
+                                          }}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
-                              )}
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <CardContent className="space-y-4 px-6 pb-5 pt-0">
+                                  {instruction.instruction_url && (
+                                    <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+                                      <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-medium text-muted-foreground">Link</p>
+                                        <a
+                                          href={instruction.instruction_url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="break-all text-sm text-primary hover:underline"
+                                        >
+                                          {instruction.instruction_url}
+                                        </a>
+                                      </div>
+                                    </div>
+                                  )}
 
-                              <div className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
-                                {instruction.description}
-                              </div>
-                            </CardContent>
+                                  <div className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
+                                    {instruction.description}
+                                  </div>
+                                </CardContent>
+                              </AccordionContent>
+                            </AccordionItem>
                           </Card>
                         );
                       })}
-                    </div>
+                    </Accordion>
                   </AccordionContent>
                 </AccordionItem>
               ))}
