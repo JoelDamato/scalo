@@ -24,6 +24,7 @@ import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
 import CalendarPage from "./pages/Calendar";
 import WhatsAppPage from "./pages/WhatsApp";
 import ProjectOnboarding from "./pages/ProjectOnboarding";
+import PublicProjectInstructions from "./pages/PublicProjectInstructions";
 
 import Resources from "./pages/Resources";
 import SharedInitiative from "./pages/SharedInitiative";
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/studio-bloom-comisiones" element={<StudioBloomFinance />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding/:token" element={<ProjectOnboarding />} />
+              <Route path="/instructivos/:token" element={<PublicProjectInstructions />} />
               <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />
               <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />

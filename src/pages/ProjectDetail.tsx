@@ -458,7 +458,11 @@ export default function ProjectDetail() {
           )}
 
           <TabsContent value="instructions" className="mt-6">
-            <ProjectInstructionsTab projectId={id!} isAdmin={isAdmin} />
+            <ProjectInstructionsTab
+              projectId={id!}
+              isAdmin={isAdmin}
+              publicToken={project.onboarding_token}
+            />
           </TabsContent>
 
           <TabsContent value="pages" className="mt-6">

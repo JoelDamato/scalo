@@ -2280,6 +2280,20 @@ export type Database = {
           support_active: boolean
         }[]
       }
+      get_public_project_instructions: {
+        Args: { p_token: string }
+        Returns: {
+          project_id: string
+          project_name: string
+          project_description: string | null
+          instruction_id: string | null
+          category: string | null
+          title: string | null
+          description: string | null
+          instruction_url: string | null
+          updated_at: string | null
+        }[]
+      }
       can_access_finance: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_first_user: { Args: never; Returns: boolean }

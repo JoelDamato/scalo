@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ExternalLink, FileText, FolderOpen, Link2, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
+import { Copy, ExternalLink, FileText, FolderOpen, Link2, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -59,6 +59,7 @@ type InstructionFormData = z.infer<typeof instructionSchema>;
 interface ProjectInstructionsTabProps {
   projectId: string;
   isAdmin: boolean;
+  publicToken?: string;
 }
 
 function getDefaultValues(instruction?: ProjectInstruction): InstructionFormData {
@@ -74,7 +75,7 @@ function getInstructionCategoryLabel(category: string | null | undefined) {
   return category?.trim() || 'General';
 }
 
-export function ProjectInstructionsTab({ projectId, isAdmin }: ProjectInstructionsTabProps) {
+export function ProjectInstructionsTab({ projectId, isAdmin, publicToken }: ProjectInstructionsTabProps) {
   const { data: instructions = [], isLoading } = useProjectInstructions(projectId);
   const { data: profiles = [] } = useProfiles();
   const createInstruction = useCreateProjectInstruction();
@@ -84,6 +85,7 @@ export function ProjectInstructionsTab({ projectId, isAdmin }: ProjectInstructio
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingInstruction, setEditingInstruction] = useState<ProjectInstruction | null>(null);
   const [deletingInstruction, setDeletingInstruction] = useState<ProjectInstruction | null>(null);
+  const publicInstructionsUrl = publicToken ? `${window.location.origin}/instructivos/${publicToken}` : null;
 
   const profileByUserId = useMemo(
     () => new Map(profiles.map((profile) => [profile.user_id, profile])),
@@ -122,6 +124,17 @@ export function ProjectInstructionsTab({ projectId, isAdmin }: ProjectInstructio
     }
   };
 
+  const copyPublicInstructionsUrl = async () => {
+    if (!publicInstructionsUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(publicInstructionsUrl);
+      toast.success('Link público copiado');
+    } catch {
+      toast.error('No pude copiar el link');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -146,40 +159,56 @@ export function ProjectInstructionsTab({ projectId, isAdmin }: ProjectInstructio
             </CardDescription>
           </div>
           {isAdmin && (
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Nuevo Instructivo
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Nuevo Instructivo</DialogTitle>
-                  <DialogDescription>
-                    Agrega una guía, un link útil o información importante para este proyecto.
-                  </DialogDescription>
-                </DialogHeader>
-                <ProjectInstructionForm
-                  onSubmit={async (data) => {
-                    try {
-                      await createInstruction.mutateAsync({
-                        project_id: projectId,
-                        category: data.category?.trim() || null,
-                        title: data.title.trim(),
-                        instruction_url: data.instruction_url?.trim() || null,
-                        description: data.description.trim(),
-                      });
-                      toast.success('Instructivo guardado');
-                      setIsCreateOpen(false);
-                    } catch (error) {
-                      toast.error(error instanceof Error ? error.message : 'No pude guardar el instructivo');
-                    }
-                  }}
-                  isSubmitting={createInstruction.isPending}
-                />
-              </DialogContent>
-            </Dialog>
+            <div className="flex flex-wrap items-center gap-2">
+              {publicInstructionsUrl && (
+                <>
+                  <Button type="button" variant="outline" className="gap-2" onClick={copyPublicInstructionsUrl}>
+                    <Copy className="h-4 w-4" />
+                    Copiar link público
+                  </Button>
+                  <Button type="button" variant="outline" className="gap-2" asChild>
+                    <a href={publicInstructionsUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      Ver página pública
+                    </a>
+                  </Button>
+                </>
+              )}
+              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Nuevo Instructivo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Nuevo Instructivo</DialogTitle>
+                    <DialogDescription>
+                      Agrega una guía, un link útil o información importante para este proyecto.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ProjectInstructionForm
+                    onSubmit={async (data) => {
+                      try {
+                        await createInstruction.mutateAsync({
+                          project_id: projectId,
+                          category: data.category?.trim() || null,
+                          title: data.title.trim(),
+                          instruction_url: data.instruction_url?.trim() || null,
+                          description: data.description.trim(),
+                        });
+                        toast.success('Instructivo guardado');
+                        setIsCreateOpen(false);
+                      } catch (error) {
+                        toast.error(error instanceof Error ? error.message : 'No pude guardar el instructivo');
+                      }
+                    }}
+                    isSubmitting={createInstruction.isPending}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
           )}
         </CardHeader>
         <CardContent>
